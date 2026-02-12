@@ -8,7 +8,12 @@ macOS 메뉴바에서 Claude, Codex, Copilot, Gemini, OpenRouter 사용량을 �
 ![Swift](https://img.shields.io/badge/Swift-6.0-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-![UsageMonitor App Icon](docs/images/app-icon.png)
+## 바로 다운로드 (권장)
+
+1. [Latest Release 다운로드](https://github.com/hichoe95/AI_Provider_Usage_monitor_for_mac/releases/latest)
+2. `UsageMonitor-vX.Y.Z-macOS.dmg` 또는 `UsageMonitor-vX.Y.Z-macOS.zip` 파일 다운로드
+3. 첫 실행 시 앱을 우클릭 후 `열기(Open)`로 실행
+
 ![UsageMonitor Dropdown Demo](docs/images/usage-monitor-demo.gif)
 ![UsageMonitor Dropdown](docs/images/usage-monitor-dropdown.png)
 
@@ -35,12 +40,6 @@ macOS 메뉴바에서 Claude, Codex, Copilot, Gemini, OpenRouter 사용량을 �
 - Apple Silicon / Intel 모두 가능 (SwiftPM 빌드 환경 필요)
 - Swift 6.0 toolchain (`swift --version`)
 - 네트워크 연결
-
-## 바로 다운로드 (권장)
-
-- 최신 릴리즈: `https://github.com/<YOUR_ACCOUNT>/AI_provider_usage_monitor/releases/latest`
-- 파일: `UsageMonitor-vX.Y.Z-macOS.dmg` 또는 `UsageMonitor-vX.Y.Z-macOS.zip`
-- 첫 실행 시 앱을 우클릭 후 `열기(Open)`로 실행
 
 ## 빠른 시작
 

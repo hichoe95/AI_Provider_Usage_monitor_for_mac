@@ -8,7 +8,12 @@ Native macOS menu bar app for monitoring Claude, Codex, Copilot, Gemini, and Ope
 ![Swift](https://img.shields.io/badge/Swift-6.0-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-![UsageMonitor App Icon](docs/images/app-icon.png)
+## Direct Download (Recommended)
+
+1. [Download Latest Release](https://github.com/hichoe95/AI_Provider_Usage_monitor_for_mac/releases/latest)
+2. Download `UsageMonitor-vX.Y.Z-macOS.dmg` or `UsageMonitor-vX.Y.Z-macOS.zip`
+3. For first launch, right-click the app and choose `Open`
+
 ![UsageMonitor Dropdown Demo](docs/images/usage-monitor-demo.gif)
 ![UsageMonitor Dropdown](docs/images/usage-monitor-dropdown.png)
 
@@ -34,12 +39,6 @@ Native macOS menu bar app for monitoring Claude, Codex, Copilot, Gemini, and Ope
 - macOS 14+
 - Swift 6.0 toolchain (`swift --version`)
 - Network access
-
-## Direct Download (Recommended)
-
-- Latest release: `https://github.com/<YOUR_ACCOUNT>/AI_provider_usage_monitor/releases/latest`
-- Files: `UsageMonitor-vX.Y.Z-macOS.dmg` or `UsageMonitor-vX.Y.Z-macOS.zip`
-- For first launch, right-click the app and choose `Open`
 
 ## Quick Start
 
