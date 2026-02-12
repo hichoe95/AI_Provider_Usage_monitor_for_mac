@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-APP_NAME="UsageMonitor"
+APP_NAME="AIUsageMonitor"
 BUILD_DIR=".build/debug"
 
 echo "Building..."

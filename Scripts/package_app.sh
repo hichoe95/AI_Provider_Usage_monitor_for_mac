@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-APP_NAME="UsageMonitor"
+APP_NAME="AIUsageMonitor"
+EXECUTABLE_NAME="AIUsageMonitor"
 BUILD_DIR=".build/release"
 APP_BUNDLE="${APP_NAME}.app"
 ICON_FILE="Assets/UsageMonitor.icns"
@@ -15,7 +16,7 @@ mkdir -p "${APP_BUNDLE}/Contents/MacOS"
 mkdir -p "${APP_BUNDLE}/Contents/Resources"
 
 # Copy binary
-cp "${BUILD_DIR}/${APP_NAME}" "${APP_BUNDLE}/Contents/MacOS/"
+cp "${BUILD_DIR}/${EXECUTABLE_NAME}" "${APP_BUNDLE}/Contents/MacOS/"
 
 # Copy SwiftPM resource bundle(s)
 for resource_bundle in "${BUILD_DIR}"/*.bundle; do
@@ -26,7 +27,7 @@ done
 
 # Copy app icon if available
 if [ -f "${ICON_FILE}" ]; then
-    cp "${ICON_FILE}" "${APP_BUNDLE}/Contents/Resources/UsageMonitor.icns"
+    cp "${ICON_FILE}" "${APP_BUNDLE}/Contents/Resources/AIUsageMonitor.icns"
 fi
 
 # Info.plist
@@ -36,13 +37,15 @@ cat > "${APP_BUNDLE}/Contents/Info.plist" << 'EOF'
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key>
-    <string>UsageMonitor</string>
+    <string>AIUsageMonitor</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
     <key>CFBundleIdentifier</key>
     <string>com.choihwanil.usagemonitor</string>
     <key>CFBundleName</key>
-    <string>UsageMonitor</string>
+    <string>AIUsageMonitor</string>
+    <key>CFBundleDisplayName</key>
+    <string>AIUsageMonitor</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -50,7 +53,7 @@ cat > "${APP_BUNDLE}/Contents/Info.plist" << 'EOF'
     <key>CFBundleVersion</key>
     <string>1</string>
     <key>CFBundleIconFile</key>
-    <string>UsageMonitor.icns</string>
+    <string>AIUsageMonitor.icns</string>
     <key>LSUIElement</key>
     <true/>
     <key>LSMinimumSystemVersion</key>

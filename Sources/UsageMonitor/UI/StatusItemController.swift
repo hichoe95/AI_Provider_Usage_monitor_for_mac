@@ -188,7 +188,7 @@ final class StatusItemController: ObservableObject {
         if settingsWindowController == nil {
             let hostingController = NSHostingController(rootView: SettingsView())
             let window = NSWindow(contentViewController: hostingController)
-            window.title = "UsageMonitor Settings"
+            window.title = "AIUsageMonitor Settings"
             window.styleMask = [.titled, .closable, .miniaturizable]
             window.setContentSize(NSSize(width: 420, height: 700))
             window.center()

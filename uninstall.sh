@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-APP_NAME="UsageMonitor.app"
+APP_NAME="AIUsageMonitor.app"
 PRIMARY="/Applications/$APP_NAME"
 FALLBACK="$HOME/Applications/$APP_NAME"
 

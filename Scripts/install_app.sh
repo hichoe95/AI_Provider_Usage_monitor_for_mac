@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-APP_NAME="UsageMonitor.app"
+APP_NAME="AIUsageMonitor.app"
 LOG_FILE="${TMPDIR:-/tmp}/usagemonitor-install.log"
 
 IS_TTY=0
@@ -37,7 +37,7 @@ TARGET_PATH=""
 banner() {
     cat <<'EOF'
 +-------------------------------------------------------------------+
-|                      USAGEMONITOR INSTALLER                       |
+|                    AIUSAGEMONITOR INSTALLER                       |
 +-------------------------------------------------------------------+
 EOF
 }

@@ -64,7 +64,7 @@ final class NotificationManager: NSObject {
 
     func sendTestNotification() {
         sendNotification(
-            title: "UsageMonitor Test Alert",
+            title: "AIUsageMonitor Test Alert",
             body: "If you can see this, notifications are working."
         )
     }

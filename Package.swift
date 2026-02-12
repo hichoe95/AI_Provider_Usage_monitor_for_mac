@@ -5,7 +5,7 @@ let package = Package(
     name: "UsageMonitor",
     platforms: [.macOS(.v14)],
     products: [
-        .executable(name: "UsageMonitor", targets: ["UsageMonitor"])
+        .executable(name: "AIUsageMonitor", targets: ["UsageMonitor"])
     ],
     targets: [
         .executableTarget(
