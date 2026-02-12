@@ -188,32 +188,6 @@ CLI commands vary by version, so check each tool's help:
 - OpenRouter API key entered in Settings is stored in Keychain
 - URL/app transient caches are cleaned on app launch (settings and keychain data are preserved)
 
-## GitHub release guide
-
-### 1) Publish repository
-
-```bash
-git init
-git add .
-git commit -m "Initial release"
-git branch -M main
-git remote add origin https://github.com/<YOUR_ACCOUNT>/AI_provider_usage_monitor.git
-git push -u origin main
-```
-
-### 2) Build release artifact
-
-```bash
-./Scripts/package_app.sh
-zip -r UsageMonitor-macOS.zip UsageMonitor.app
-```
-
-### 3) Create GitHub Release
-
-- Create tag (example: `v1.0.0`)
-- Upload `UsageMonitor-macOS.zip`
-- Link installation instructions in release notes
-
 ## Development
 
 ```bash

@@ -193,32 +193,6 @@ open UsageMonitor.app
 - 사용자 입력 OpenRouter API Key는 Keychain 저장
 - 앱 시작 시 URL 캐시/앱 캐시 정리 (설정/Keychain 유지)
 
-## 배포 가이드 (GitHub)
-
-### 1) 저장소 공개
-
-```bash
-git init
-git add .
-git commit -m "Initial release"
-git branch -M main
-git remote add origin https://github.com/<YOUR_ACCOUNT>/AI_provider_usage_monitor.git
-git push -u origin main
-```
-
-### 2) 릴리즈 아티팩트 생성
-
-```bash
-./Scripts/package_app.sh
-zip -r UsageMonitor-macOS.zip UsageMonitor.app
-```
-
-### 3) GitHub Release 등록
-
-- tag 생성 (예: `v1.0.0`)
-- `UsageMonitor-macOS.zip` 업로드
-- README의 설치 섹션 링크 연결
-
 ## 개발
 
 ```bash
