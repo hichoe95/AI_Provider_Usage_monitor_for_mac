@@ -8,12 +8,6 @@ Native macOS menu bar app for monitoring Claude, Codex, Copilot, Gemini, and Ope
 ![Swift](https://img.shields.io/badge/Swift-6.0-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-## Direct Download (Recommended)
-
-1. [Download Latest Release](https://github.com/hichoe95/AI_Provider_Usage_monitor_for_mac/releases/latest)
-2. Download `UsageMonitor-vX.Y.Z-macOS.dmg` or `UsageMonitor-vX.Y.Z-macOS.zip`
-3. For first launch, right-click the app and choose `Open`
-
 ![UsageMonitor Dropdown Demo](docs/images/usage-monitor-demo.gif)
 ![UsageMonitor Dropdown](docs/images/usage-monitor-dropdown.png)
 
@@ -36,40 +30,52 @@ Native macOS menu bar app for monitoring Claude, Codex, Copilot, Gemini, and Ope
 
 ## Requirements
 
-- macOS 14+
-- Swift 6.0 toolchain (`swift --version`)
-- Network access
+| Item | Minimum |
+|------|---------|
+| **OS** | macOS 14 (Sonoma) or later |
+| **Architecture** | Apple Silicon / Intel both supported |
+| **Xcode** | 16.0 or later (includes Swift 6.0 toolchain) |
+| **Swift** | 6.0 or later (verify with `swift --version`) |
+| **Git** | Required (verify with `git --version`) |
+| **Network** | Needed for package resolution at build time + runtime API calls |
+| **Disk** | ~500MB (excluding Xcode, including build cache) |
 
-## Quick Start
+> **No Xcode?** Install [Xcode](https://apps.apple.com/app/xcode/id497799835) from the App Store, or run `xcode-select --install` for Command Line Tools only and then install the [Swift 6.0 toolchain](https://www.swift.org/install/) separately.
 
-### 1) Run from source
+## Installation
+
+### One-liner install (recommended)
 
 ```bash
-git clone https://github.com/<YOUR_ACCOUNT>/AI_provider_usage_monitor.git
-cd AI_provider_usage_monitor
-swift build
+git clone https://github.com/hichoe95/AI_Provider_Usage_monitor_for_mac.git
+cd AI_Provider_Usage_monitor_for_mac
+./Scripts/install_app.sh
+```
+
+What the install script does automatically:
+
+1. Build in release mode
+2. Create `UsageMonitor.app` bundle
+3. Copy to `/Applications` (or `~/Applications` if permissions are limited)
+4. Launch the app
+
+### Manual build
+
+```bash
+git clone https://github.com/hichoe95/AI_Provider_Usage_monitor_for_mac.git
+cd AI_Provider_Usage_monitor_for_mac
+swift build -c release
 ./Scripts/package_app.sh
 open UsageMonitor.app
 ```
 
-### 2) Install with script
+### Update
 
 ```bash
+cd AI_Provider_Usage_monitor_for_mac
+git pull
 ./Scripts/install_app.sh
 ```
-
-What the install script does:
-
-1. Build release binary
-2. Create `UsageMonitor.app`
-3. Copy to `/Applications` (or `~/Applications` if needed)
-4. Launch the app
-
-## Automatic Release
-
-- A GitHub Release is created automatically when you push a version tag.
-- Trigger: `git tag v1.0.0 && git push origin v1.0.0`
-- Generated assets: `UsageMonitor-v1.0.0-macOS.dmg`, `UsageMonitor-v1.0.0-macOS.zip`, `checksums-v1.0.0.txt`
 
 ## Why auth login is required
 

@@ -8,12 +8,6 @@ macOS 메뉴바에서 Claude, Codex, Copilot, Gemini, OpenRouter 사용량을 �
 ![Swift](https://img.shields.io/badge/Swift-6.0-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-## 바로 다운로드 (권장)
-
-1. [Latest Release 다운로드](https://github.com/hichoe95/AI_Provider_Usage_monitor_for_mac/releases/latest)
-2. `UsageMonitor-vX.Y.Z-macOS.dmg` 또는 `UsageMonitor-vX.Y.Z-macOS.zip` 파일 다운로드
-3. 첫 실행 시 앱을 우클릭 후 `열기(Open)`로 실행
-
 ![UsageMonitor Dropdown Demo](docs/images/usage-monitor-demo.gif)
 ![UsageMonitor Dropdown](docs/images/usage-monitor-dropdown.png)
 
@@ -36,41 +30,52 @@ macOS 메뉴바에서 Claude, Codex, Copilot, Gemini, OpenRouter 사용량을 �
 
 ## 시스템 요구사항
 
-- macOS 14 이상
-- Apple Silicon / Intel 모두 가능 (SwiftPM 빌드 환경 필요)
-- Swift 6.0 toolchain (`swift --version`)
-- 네트워크 연결
+| 항목 | 최소 요구사항 |
+|------|--------------|
+| **OS** | macOS 14 (Sonoma) 이상 |
+| **아키텍처** | Apple Silicon / Intel 모두 지원 |
+| **Xcode** | 16.0 이상 (Swift 6.0 toolchain 포함) |
+| **Swift** | 6.0 이상 (`swift --version`으로 확인) |
+| **Git** | 설치 필요 (`git --version`으로 확인) |
+| **네트워크** | 빌드 시 패키지 resolve + 런타임 API 호출에 필요 |
+| **디스크** | 약 500MB (Xcode 제외, 빌드 캐시 포함) |
 
-## 빠른 시작
+> **Xcode가 없다면?** App Store에서 [Xcode](https://apps.apple.com/app/xcode/id497799835)를 설치하거나, `xcode-select --install`로 Command Line Tools만 설치 후 [Swift 6.0 toolchain](https://www.swift.org/install/)을 별도로 받으세요.
 
-### 1) 소스에서 바로 실행
+## 설치 방법
+
+### 한 줄 설치 (권장)
 
 ```bash
-git clone https://github.com/<YOUR_ACCOUNT>/AI_provider_usage_monitor.git
-cd AI_provider_usage_monitor
-swift build
+git clone https://github.com/hichoe95/AI_Provider_Usage_monitor_for_mac.git
+cd AI_Provider_Usage_monitor_for_mac
+./Scripts/install_app.sh
+```
+
+설치 스크립트가 자동으로 수행하는 작업:
+
+1. Release 모드 빌드
+2. `UsageMonitor.app` 번들 생성
+3. `/Applications` (권한 없으면 `~/Applications`)에 복사
+4. 앱 실행
+
+### 수동 빌드
+
+```bash
+git clone https://github.com/hichoe95/AI_Provider_Usage_monitor_for_mac.git
+cd AI_Provider_Usage_monitor_for_mac
+swift build -c release
 ./Scripts/package_app.sh
 open UsageMonitor.app
 ```
 
-### 2) 설치 스크립트 사용
+### 업데이트
 
 ```bash
+cd AI_Provider_Usage_monitor_for_mac
+git pull
 ./Scripts/install_app.sh
 ```
-
-설치 스크립트 동작:
-
-1. release 빌드
-2. `UsageMonitor.app` 생성
-3. `/Applications` (권한 없으면 `~/Applications`)에 복사
-4. 앱 실행
-
-## 자동 릴리즈
-
-- 태그를 푸시하면 GitHub Release가 자동 생성됩니다.
-- 트리거: `git tag v1.0.0 && git push origin v1.0.0`
-- 생성 파일: `UsageMonitor-v1.0.0-macOS.dmg`, `UsageMonitor-v1.0.0-macOS.zip`, `checksums-v1.0.0.txt`
 
 ## 인증이 필요한 이유 (중요)
 

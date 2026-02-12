@@ -69,7 +69,7 @@ enum IconRenderer {
         openRouter: OpenRouterSegmentData?,
         isStale: Bool = false
     ) -> NSImage {
-        let providerWidth: CGFloat = 30
+        let providerWidth: CGFloat = 36
         let providerSpacing: CGFloat = 5
         let leftPad: CGFloat = 5
         let rightPad: CGFloat = 5
@@ -136,7 +136,7 @@ enum IconRenderer {
         }
 
         let barX = x + iconSize + 3
-        let barWidth: CGFloat = 14
+        let barWidth: CGFloat = 20
         let barHeight: CGFloat = 5
         let barGap: CGFloat = 2
         let barsOriginY = (totalHeight - (barHeight * 2 + barGap)) / 2
