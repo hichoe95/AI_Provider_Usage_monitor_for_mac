@@ -76,11 +76,11 @@ Files:
 - `README_EN.md`
 
 ### 7) Icon Final Replacement
-- Replaced application icon assets with user-provided `docs/images/final_logo.png`.
+- Replaced application icon assets with user-provided `docs/images/logo.png`.
 - Regenerated `UsageMonitor.icns` from the new 1024x1024 source.
 
 Files:
-- `docs/images/final_logo.png`
+- `docs/images/logo.png`
 - `Assets/usage-monitor-icon.png`
 - `Assets/UsageMonitor.icns`
 - `docs/images/app-icon.png`

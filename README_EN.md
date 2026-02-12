@@ -176,7 +176,7 @@ Local source build/install is the most reliable path for now.
 - README: kept a single primary menu screenshot
 - Install: added root `./install.sh` + `./uninstall.sh` scripts
 - Installer banner: fixed `EXHAUSTED` line alignment/output
-- Icon: fully replaced from `docs/images/final_logo.png` and regenerated `UsageMonitor.icns`
+- Icon: fully replaced from `docs/images/logo.png` and regenerated `UsageMonitor.icns`
 - Tooling: added `Scripts/generate_icon_with_gemini.py`
 
 ### 2026-02-12

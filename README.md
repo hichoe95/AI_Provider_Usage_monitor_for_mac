@@ -175,7 +175,7 @@ GOOGLE_GENERATIVE_AI_API_KEY=... python3 Scripts/generate_icon_with_gemini.py --
 - README: 대표 메뉴 스크린샷 1장만 유지
 - 설치: 루트 `./install.sh` + `./uninstall.sh` 스크립트 추가
 - 설치 배너: `EXHAUSTED` 문구 정렬/출력 보정
-- 아이콘: `docs/images/final_logo.png` 기준으로 전면 교체 및 `UsageMonitor.icns` 재생성
+- 아이콘: `docs/images/logo.png` 기준으로 전면 교체 및 `UsageMonitor.icns` 재생성
 - 도구: `Scripts/generate_icon_with_gemini.py` 추가
 
 ### 2026-02-12
