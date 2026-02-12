@@ -61,6 +61,13 @@ final class NotificationManager: NSObject {
         sendNotification(title: "⚠️ \(provider) Usage Alert", body: message)
         lastNotifiedProviders[provider] = Date()
     }
+
+    func sendTestNotification() {
+        sendNotification(
+            title: "UsageMonitor Test Alert",
+            body: "If you can see this, notifications are working."
+        )
+    }
     
     private nonisolated func sendNotification(title: String, body: String) {
         let center = UNUserNotificationCenter.current()

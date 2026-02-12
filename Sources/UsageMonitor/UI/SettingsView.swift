@@ -1,4 +1,5 @@
 import SwiftUI
+@preconcurrency import UserNotifications
 import UsageMonitorCore
 
 @MainActor
@@ -6,6 +7,7 @@ struct SettingsView: View {
     @StateObject private var settings = SettingsStore()
     @State private var openRouterKey: String = ""
     @State private var saveState: SaveState = .idle
+    @State private var notificationStatusText: String = "Checking permission..."
 
     private enum SaveState {
         case idle, saving, saved, error
@@ -49,6 +51,32 @@ struct SettingsView: View {
                 GroupBox(label: Label("Notifications", systemImage: "bell.badge")) {
                     VStack(alignment: .leading, spacing: 10) {
                         Toggle("Enable usage alerts", isOn: $settings.notificationsEnabled)
+
+                        HStack(spacing: 8) {
+                            Text(notificationStatusText)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Button("Re-check") {
+                                refreshNotificationStatus()
+                            }
+                            .buttonStyle(.borderless)
+                        }
+
+                        HStack(spacing: 8) {
+                            Button("Send test alert") {
+                                NotificationManager.shared.sendTestNotification()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+
+                            Button("Request permission") {
+                                NotificationManager.shared.requestPermission()
+                                refreshNotificationStatus()
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                        }
 
                         if settings.notificationsEnabled {
                             Divider()
@@ -148,9 +176,16 @@ struct SettingsView: View {
         }
         .frame(width: 420, height: 700)
         .onAppear {
+            refreshNotificationStatus()
             if settings.openRouterEnabled {
                 loadOpenRouterKey()
             }
+        }
+        .onChange(of: settings.notificationsEnabled) { _, enabled in
+            if enabled {
+                NotificationManager.shared.requestPermission()
+            }
+            refreshNotificationStatus()
         }
         .onChange(of: settings.openRouterEnabled) { _, enabled in
             if enabled {
@@ -206,6 +241,30 @@ struct SettingsView: View {
         Task {
             if let savedKey = try? await KeychainHelper.read(key: "openrouter-api-key") {
                 openRouterKey = savedKey
+            }
+        }
+    }
+
+    private func refreshNotificationStatus() {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            let text: String
+            switch settings.authorizationStatus {
+            case .authorized:
+                text = "Notifications: Allowed"
+            case .provisional:
+                text = "Notifications: Provisional"
+            case .ephemeral:
+                text = "Notifications: Ephemeral"
+            case .denied:
+                text = "Notifications: Denied in System Settings"
+            case .notDetermined:
+                text = "Notifications: Not determined"
+            @unknown default:
+                text = "Notifications: Unknown status"
+            }
+
+            Task { @MainActor in
+                notificationStatusText = text
             }
         }
     }
