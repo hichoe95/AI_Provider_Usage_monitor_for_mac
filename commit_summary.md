@@ -66,6 +66,7 @@ Files:
 
 ### 6) README Readability Refresh
 - Added centered hero statement: `WORK UNTIL USAGE IS EXHAUSTED.`
+- Added top app icon preview in README hero area.
 - Reorganized docs into Quick Start -> Features -> Update/Uninstall -> Troubleshooting flow.
 - Added explicit uninstall docs and install failure log troubleshooting.
 - Collapsed full changelog with `<details>` for better scanability.

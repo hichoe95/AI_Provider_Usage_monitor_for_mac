@@ -3,6 +3,10 @@
 <!-- MIRROR: keep section order aligned with README_EN.md -->
 
 <div align="center">
+  <img src="docs/images/app-icon.png" alt="UsageMonitor App Icon" width="128" height="128" />
+</div>
+
+<div align="center">
   <h1>WORK UNTIL USAGE IS EXHAUSTED.</h1>
 </div>
 
@@ -172,6 +176,7 @@ GOOGLE_GENERATIVE_AI_API_KEY=... python3 Scripts/generate_icon_with_gemini.py --
 - Notifications 설정 진단 추가 (`Re-check`, `Request permission`, `Send test alert`)
 - README: 알림 설정 방법(필수) 섹션 추가
 - README: Hero 문구 추가 + Quick Start 중심 구조로 재정리
+- README: 최상단에 앱 아이콘 미리보기 추가
 - README: 대표 메뉴 스크린샷 1장만 유지
 - 설치: 루트 `./install.sh` + `./uninstall.sh` 스크립트 추가
 - 설치 배너: `EXHAUSTED` 문구 정렬/출력 보정

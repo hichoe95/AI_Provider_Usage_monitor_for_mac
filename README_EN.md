@@ -3,6 +3,10 @@
 <!-- MIRROR: keep section order aligned with README.md -->
 
 <div align="center">
+  <img src="docs/images/app-icon.png" alt="UsageMonitor App Icon" width="128" height="128" />
+</div>
+
+<div align="center">
   <h1>WORK UNTIL USAGE IS EXHAUSTED.</h1>
 </div>
 
@@ -173,6 +177,7 @@ Local source build/install is the most reliable path for now.
 - Added notification diagnostics in Settings (`Re-check`, `Request permission`, `Send test alert`)
 - README: added required notification setup section
 - README: added hero statement + reorganized docs around Quick Start
+- README: added top app icon preview in hero section
 - README: kept a single primary menu screenshot
 - Install: added root `./install.sh` + `./uninstall.sh` scripts
 - Installer banner: fixed `EXHAUSTED` line alignment/output
