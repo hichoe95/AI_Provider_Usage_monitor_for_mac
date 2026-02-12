@@ -43,7 +43,12 @@ public struct CodexProvider: Provider {
     private struct CodexUsageSnapshot: Sendable {
         let sessionUsage: Double?
         let weeklyUsage: Double?
-        let resetDate: Date?
+        let sessionResetDate: Date?
+        let weeklyResetDate: Date?
+
+        var resetDate: Date? {
+            sessionResetDate ?? weeklyResetDate
+        }
     }
 
     private struct UsageCandidate: Sendable {
@@ -135,6 +140,8 @@ public struct CodexProvider: Provider {
                             weeklyUsage: headerParsed.weeklyUsage,
                             remainingCredits: nil,
                             resetDate: headerParsed.resetDate,
+                            sessionResetDate: headerParsed.sessionResetDate,
+                            weeklyResetDate: headerParsed.weeklyResetDate,
                             lastUpdated: Date()
                         )
                     }
@@ -155,6 +162,8 @@ public struct CodexProvider: Provider {
                     weeklyUsage: parsed.weeklyUsage,
                     remainingCredits: nil,
                     resetDate: parsed.resetDate,
+                    sessionResetDate: parsed.sessionResetDate,
+                    weeklyResetDate: parsed.weeklyResetDate,
                     lastUpdated: Date()
                 )
             case 401, 403:
@@ -196,18 +205,23 @@ public struct CodexProvider: Provider {
         decoder.dateDecodingStrategy = .iso8601
         if let legacy = try? decoder.decode(CodexUsageResponse.self, from: data) {
             var weekly: Double?
-            var resetDate: Date?
+            var weeklyResetDate: Date?
             if let latestWindow = legacy.usageWindows?.last {
                 if let usage = latestWindow.usage {
                     weekly = normalizeUsage(usage)
                 }
-                resetDate = latestWindow.endDate
+                weeklyResetDate = latestWindow.endDate
             }
 
             if weekly == nil {
                 return nil
             }
-            return CodexUsageSnapshot(sessionUsage: nil, weeklyUsage: weekly, resetDate: resetDate)
+            return CodexUsageSnapshot(
+                sessionUsage: nil,
+                weeklyUsage: weekly,
+                sessionResetDate: nil,
+                weeklyResetDate: weeklyResetDate
+            )
         }
 
         return nil
@@ -216,24 +230,24 @@ public struct CodexProvider: Provider {
     private func parseUsageFromFlexibleJSON(_ root: Any) -> CodexUsageSnapshot? {
         var sessionUsage: Double?
         var weeklyUsage: Double?
-        var resetDate: Date?
+        var sessionResetDate: Date?
+        var weeklyResetDate: Date?
 
         if let dict = root as? [String: Any] {
+            if let parsed = parsePrimarySecondaryWindows(in: dict) {
+                sessionUsage = parsed.sessionUsage
+                weeklyUsage = parsed.weeklyUsage
+                sessionResetDate = parsed.sessionResetDate
+                weeklyResetDate = parsed.weeklyResetDate
+            }
+
             if let sessionBucket = value(for: ["five_hour", "fiveHour", "rolling_5h", "five_hour_window"], in: dict) {
                 sessionUsage = usagePercent(in: sessionBucket)
-                resetDate = date(
-                    for: ["resets_at", "reset_at", "resetDate", "end_date", "endDate"],
-                    in: sessionBucket
-                )
+                sessionResetDate = resetDate(in: sessionBucket)
             }
             if let weeklyBucket = value(for: ["seven_day", "sevenDay", "rolling_7d", "seven_day_window"], in: dict) {
                 weeklyUsage = usagePercent(in: weeklyBucket)
-                if resetDate == nil {
-                    resetDate = date(
-                        for: ["resets_at", "reset_at", "resetDate", "end_date", "endDate"],
-                        in: weeklyBucket
-                    )
-                }
+                weeklyResetDate = resetDate(in: weeklyBucket)
             }
 
             if sessionUsage == nil {
@@ -263,30 +277,34 @@ public struct CodexProvider: Provider {
                 if weeklyUsage == nil {
                     weeklyUsage = parsed.weeklyUsage
                 }
-                if resetDate == nil {
-                    resetDate = parsed.resetDate
+                if sessionResetDate == nil {
+                    sessionResetDate = parsed.sessionResetDate
+                }
+                if weeklyResetDate == nil {
+                    weeklyResetDate = parsed.weeklyResetDate
                 }
             }
 
             if sessionUsage == nil {
                 let matched = findWindowData(in: root, tokens: ["five", "5h", "5_hour", "session"])
                 sessionUsage = matched.usage
-                if resetDate == nil {
-                    resetDate = matched.reset
+                if sessionResetDate == nil {
+                    sessionResetDate = matched.reset
                 }
             }
             if weeklyUsage == nil {
                 let matched = findWindowData(in: root, tokens: ["seven", "7d", "week", "weekly"])
                 weeklyUsage = matched.usage
-                if resetDate == nil {
-                    resetDate = matched.reset
+                if weeklyResetDate == nil {
+                    weeklyResetDate = matched.reset
                 }
             }
         } else if let windows = root as? [Any] {
             let parsed = parseWindowList(windows)
             sessionUsage = parsed.sessionUsage
             weeklyUsage = parsed.weeklyUsage
-            resetDate = parsed.resetDate
+            sessionResetDate = parsed.sessionResetDate
+            weeklyResetDate = parsed.weeklyResetDate
         }
 
         if sessionUsage == nil && weeklyUsage == nil {
@@ -304,14 +322,14 @@ public struct CodexProvider: Provider {
 
                 if let session {
                     sessionUsage = session.percent
-                    if resetDate == nil {
-                        resetDate = session.resetDate
+                    if sessionResetDate == nil {
+                        sessionResetDate = session.resetDate
                     }
                 }
                 if let weekly {
                     weeklyUsage = weekly.percent
-                    if resetDate == nil {
-                        resetDate = weekly.resetDate
+                    if weeklyResetDate == nil {
+                        weeklyResetDate = weekly.resetDate
                     }
                 }
 
@@ -319,11 +337,14 @@ public struct CodexProvider: Provider {
                     let sorted = candidates.sorted { $0.percent < $1.percent }
                     if sessionUsage == nil, let minCandidate = sorted.first {
                         sessionUsage = minCandidate.percent
+                        if sessionResetDate == nil {
+                            sessionResetDate = minCandidate.resetDate
+                        }
                     }
                     if weeklyUsage == nil, let maxCandidate = sorted.last {
                         weeklyUsage = maxCandidate.percent
-                        if resetDate == nil {
-                            resetDate = maxCandidate.resetDate
+                        if weeklyResetDate == nil {
+                            weeklyResetDate = maxCandidate.resetDate
                         }
                     }
                 }
@@ -334,7 +355,12 @@ public struct CodexProvider: Provider {
             return nil
         }
 
-        return CodexUsageSnapshot(sessionUsage: sessionUsage, weeklyUsage: weeklyUsage, resetDate: resetDate)
+        return CodexUsageSnapshot(
+            sessionUsage: sessionUsage,
+            weeklyUsage: weeklyUsage,
+            sessionResetDate: sessionResetDate,
+            weeklyResetDate: weeklyResetDate
+        )
     }
 
     private func findWindowData(in value: Any, tokens: [String]) -> (usage: Double?, reset: Date?) {
@@ -348,7 +374,7 @@ public struct CodexProvider: Provider {
                 labelInFields.contains(token)
             }
             if labelMatched, let usage = usagePercent(in: dict) {
-                let reset = date(for: ["end_date", "endDate", "resets_at", "reset_at", "resetDate"], in: dict)
+                let reset = resetDate(in: dict)
                 return (usage, reset)
             }
 
@@ -356,7 +382,7 @@ public struct CodexProvider: Provider {
                 let keyLower = key.lowercased()
                 if tokens.contains(where: { keyLower.contains($0) }),
                    let usage = usagePercent(in: child) {
-                    let reset = date(for: ["end_date", "endDate", "resets_at", "reset_at", "resetDate"], in: child)
+                    let reset = resetDate(in: child)
                     return (usage, reset)
                 }
             }
@@ -384,7 +410,8 @@ public struct CodexProvider: Provider {
     private func parseWindowList(_ windows: [Any]) -> CodexUsageSnapshot {
         var sessionUsage: Double?
         var weeklyUsage: Double?
-        var resetDate: Date?
+        var sessionResetDate: Date?
+        var weeklyResetDate: Date?
         var fallbackWindows: [(usage: Double, endDate: Date?, durationHours: Double?)] = []
 
         for item in windows {
@@ -411,7 +438,7 @@ public struct CodexProvider: Provider {
             let endDate = date(
                 for: ["end_date", "endDate", "resets_at", "reset_at", "resetDate", "expires_at"],
                 in: window
-            )
+            ) ?? resetDate(in: window)
 
             let isSessionWindow =
                 label.contains("five") ||
@@ -427,10 +454,13 @@ public struct CodexProvider: Provider {
 
             if isSessionWindow {
                 sessionUsage = usage
+                if sessionResetDate == nil {
+                    sessionResetDate = endDate
+                }
             } else if isWeeklyWindow {
                 weeklyUsage = usage
-                if resetDate == nil {
-                    resetDate = endDate
+                if weeklyResetDate == nil {
+                    weeklyResetDate = endDate
                 }
             } else {
                 fallbackWindows.append((usage: usage, endDate: endDate, durationHours: normalizedDuration))
@@ -444,19 +474,27 @@ public struct CodexProvider: Provider {
 
             if sessionUsage == nil, let first = sorted.first {
                 sessionUsage = first.usage
+                if sessionResetDate == nil {
+                    sessionResetDate = first.endDate
+                }
             }
             if weeklyUsage == nil {
                 let source = sorted.count > 1 ? sorted.last : sorted.first
                 if let source {
                     weeklyUsage = source.usage
-                    if resetDate == nil {
-                        resetDate = source.endDate
+                    if weeklyResetDate == nil {
+                        weeklyResetDate = source.endDate
                     }
                 }
             }
         }
 
-        return CodexUsageSnapshot(sessionUsage: sessionUsage, weeklyUsage: weeklyUsage, resetDate: resetDate)
+        return CodexUsageSnapshot(
+            sessionUsage: sessionUsage,
+            weeklyUsage: weeklyUsage,
+            sessionResetDate: sessionResetDate,
+            weeklyResetDate: weeklyResetDate
+        )
     }
 
     private func normalizeUsage(_ value: Double) -> Double {
@@ -528,10 +566,7 @@ public struct CodexProvider: Provider {
     private func collectUsageCandidates(in value: Any, path: String, candidates: inout [UsageCandidate]) {
         if let dict = value as? [String: Any] {
             if let percent = usagePercent(in: dict) {
-                let reset = date(
-                    for: ["end_date", "endDate", "resets_at", "reset_at", "resetDate", "expires_at"],
-                    in: dict
-                )
+                let reset = resetDate(in: dict)
                 candidates.append(UsageCandidate(path: path, percent: percent, resetDate: reset))
             }
 
@@ -571,6 +606,93 @@ public struct CodexProvider: Provider {
         return best.0
     }
 
+    private func parsePrimarySecondaryWindows(in dict: [String: Any]) -> CodexUsageSnapshot? {
+        let parent = value(for: ["rate_limit", "rateLimit"], in: dict) as? [String: Any] ?? dict
+
+        let primaryWindow = value(for: ["primary_window", "primaryWindow"], in: parent)
+        let secondaryWindow = value(for: ["secondary_window", "secondaryWindow"], in: parent)
+
+        let sessionUsage = primaryWindow.flatMap { strictWindowUsagePercent(in: $0) }
+        let weeklyUsage = secondaryWindow.flatMap { strictWindowUsagePercent(in: $0) }
+
+        let sessionResetDate = primaryWindow.flatMap { resetDate(in: $0) }
+        let weeklyResetDate = secondaryWindow.flatMap { resetDate(in: $0) }
+
+        if sessionUsage == nil && weeklyUsage == nil {
+            return nil
+        }
+
+        return CodexUsageSnapshot(
+            sessionUsage: sessionUsage,
+            weeklyUsage: weeklyUsage,
+            sessionResetDate: sessionResetDate,
+            weeklyResetDate: weeklyResetDate
+        )
+    }
+
+    private func strictWindowUsagePercent(in object: Any?) -> Double? {
+        guard let dict = object as? [String: Any] else {
+            return nil
+        }
+
+        if let rawPercent = number(
+            for: [
+                "used_percent",
+                "usedPercent",
+                "utilization",
+                "usage_percent",
+                "percent_used",
+                "usage_ratio"
+            ],
+            in: dict
+        ),
+        let normalized = normalizePercentCandidate(rawPercent) {
+            return normalized
+        }
+
+        if let used = number(
+            for: ["used", "consumed", "current", "usage_count", "used_count"],
+            in: dict
+        ),
+        let limit = number(
+            for: ["limit", "max", "total", "allowed", "quota", "cap"],
+            in: dict
+        ),
+        limit > 0 {
+            let derived = normalizeUsage(used / limit)
+            return normalizePercentCandidate(derived)
+        }
+
+        return nil
+    }
+
+    private func normalizePercentCandidate(_ value: Double) -> Double? {
+        let normalized = normalizeUsage(value)
+        guard normalized >= 0, normalized <= 200 else {
+            return nil
+        }
+        return normalized
+    }
+
+    private func resetDate(in object: Any?) -> Date? {
+        if let direct = date(
+            for: ["end_date", "endDate", "resets_at", "reset_at", "resetDate", "expires_at"],
+            in: object
+        ) {
+            return direct
+        }
+
+        guard let dict = object as? [String: Any] else {
+            return nil
+        }
+
+        if let seconds = number(for: ["reset_after_seconds", "reset_after", "resetAfterSeconds"], in: dict) {
+            return Date().addingTimeInterval(seconds)
+        }
+
+        return nil
+    }
+
     private func parseUsageFromHeaders(_ headers: [AnyHashable: Any]) -> CodexUsageSnapshot {
         let sessionLimit = headerNumber(
             names: ["x-ratelimit-limit-requests", "x-ratelimit-limit", "x-ratelimit-limit-tokens"],
@@ -606,10 +728,30 @@ public struct CodexProvider: Provider {
             weeklyPercent = nil
         }
 
+        let sessionResetDate = extractResetDate(
+            from: headers,
+            primaryHeaders: [
+                "x-ratelimit-reset-requests",
+                "x-ratelimit-reset",
+                "x-ratelimit-reset-tokens"
+            ]
+        )
+        let weeklyResetDate = extractResetDate(
+            from: headers,
+            primaryHeaders: [
+                "x-weekly-ratelimit-reset",
+                "x-ratelimit-reset-weekly",
+                "x-usage-week-reset",
+                "x-ratelimit-reset-tokens",
+                "x-ratelimit-reset"
+            ]
+        ) ?? (weeklyPercent != nil ? sessionResetDate : nil)
+
         return CodexUsageSnapshot(
             sessionUsage: sessionPercent,
             weeklyUsage: weeklyPercent,
-            resetDate: extractResetDate(from: headers)
+            sessionResetDate: sessionResetDate,
+            weeklyResetDate: weeklyResetDate
         )
     }
 
@@ -628,19 +770,65 @@ public struct CodexProvider: Provider {
         return nil
     }
 
-    private func extractResetDate(from headers: [AnyHashable: Any]) -> Date? {
+    private func extractResetDate(from headers: [AnyHashable: Any], primaryHeaders: [String]) -> Date? {
         let normalized = headers.reduce(into: [String: String]()) { partial, item in
             partial[String(describing: item.key).lowercased()] = String(describing: item.value)
         }
 
-        if let raw = normalized["x-ratelimit-reset"], let epoch = parseLooseDouble(raw) {
-            return epoch > 10_000_000_000
-                ? Date(timeIntervalSince1970: epoch / 1000.0)
-                : Date(timeIntervalSince1970: epoch)
+        for name in primaryHeaders {
+            if let raw = normalized[name.lowercased()], let parsed = parseHeaderResetValue(raw) {
+                return parsed
+            }
         }
 
         if let raw = normalized["retry-after"], let sec = parseLooseDouble(raw) {
             return Date().addingTimeInterval(sec)
+        }
+
+        return nil
+    }
+
+    private func parseHeaderResetValue(_ raw: String) -> Date? {
+        let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else {
+            return nil
+        }
+
+        let pattern = #"(\d+(?:\.\d+)?)(ms|h|m|s)"#
+        if let regex = try? NSRegularExpression(pattern: pattern) {
+            let matches = regex.matches(in: value, range: NSRange(value.startIndex..., in: value))
+            if !matches.isEmpty {
+                var totalSeconds: Double = 0
+                for match in matches {
+                    guard let numberRange = Range(match.range(at: 1), in: value),
+                          let unitRange = Range(match.range(at: 2), in: value),
+                          let amount = Double(value[numberRange]) else {
+                        continue
+                    }
+                    switch String(value[unitRange]) {
+                    case "h":
+                        totalSeconds += amount * 3_600
+                    case "m":
+                        totalSeconds += amount * 60
+                    case "s":
+                        totalSeconds += amount
+                    case "ms":
+                        totalSeconds += amount / 1_000
+                    default:
+                        break
+                    }
+                }
+
+                if totalSeconds > 0 {
+                    return Date().addingTimeInterval(totalSeconds)
+                }
+            }
+        }
+
+        if let epoch = parseLooseDouble(value) {
+            return epoch > 10_000_000_000
+                ? Date(timeIntervalSince1970: epoch / 1000.0)
+                : Date(timeIntervalSince1970: epoch)
         }
 
         return nil
