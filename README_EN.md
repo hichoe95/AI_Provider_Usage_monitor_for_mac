@@ -1,5 +1,11 @@
 # UsageMonitor
 
+<!-- MIRROR: keep section order aligned with README.md -->
+
+<div align="center">
+  <h1>WORK UNTIL USAGE IS EXHAUSTED.</h1>
+</div>
+
 UsageMonitor is a native macOS menu bar app that shows Claude, Codex, Copilot, Gemini, and OpenRouter usage at a glance.
 
 [한국어 README](README.md)
@@ -9,28 +15,27 @@ UsageMonitor is a native macOS menu bar app that shows Claude, Codex, Copilot, G
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ![UsageMonitor Menu Screenshot](docs/images/screenshot-menu-2026-02-13.png)
-![UsageMonitor Settings Screenshot](docs/images/screenshot-settings-2026-02-13.png)
 
-## 1-Minute Install (Recommended)
+## Quick Start
+
+### 1) Install
 
 ```bash
 git clone https://github.com/hichoe95/AI_Provider_Usage_monitor_for_mac.git
 cd AI_Provider_Usage_monitor_for_mac
-./Scripts/install_app.sh
+./install.sh
 ```
 
-`install_app.sh` does this automatically:
-- release build
-- create `UsageMonitor.app`
-- copy to `/Applications` (or `~/Applications` if needed)
-- remove quarantine attribute
-- launch app
+`install.sh` handles everything automatically:
+- release build -> app install -> launch
+- step-by-step spinner/animated progress output
+- install log file: `${TMPDIR:-/tmp}/usagemonitor-install.log`
 
-## First 30 Seconds Setup
+### 2) First Setup
 
-1. Run provider login in the terminal on the same local Mac
-2. Click menu bar icon -> `Settings...` -> enable providers you use
-3. Click `Refresh Now` (⌘R)
+1. Run provider login in terminal on the same local Mac
+2. Open menu bar icon -> `Settings...` and enable providers you use
+3. Click `Refresh Now` (`⌘R`)
 
 CLI login commands differ by version, so check `--help`:
 
@@ -41,26 +46,21 @@ gh --help
 gemini --help
 ```
 
-## Notification Setup (Required)
+### 3) Enable Notifications (Required)
 
-1. Open menu bar icon -> `Settings...` -> `Notifications`
+1. Open `Settings...` -> `Notifications`
 2. Turn ON `Enable usage alerts`
 3. Click `Request permission`
 4. Confirm status shows `Notifications: Allowed`
-5. Click `Send test alert` and verify a real banner appears
+5. Click `Send test alert` and verify a banner appears
 
-If status is `Denied`, open macOS `System Settings -> Notifications -> UsageMonitor` and allow notifications.
+If status is `Denied`, allow notifications in macOS `System Settings -> Notifications -> UsageMonitor`.
 
-Note: same-provider alerts use a 30-minute cooldown, so repeated alerts do not fire immediately.
+## Features
 
-## What You See in the Menu
-
-- per-provider bars: `5h`, `7d`, and `sn` for Claude
-- per-bar remaining time until reset (e.g. `2h 15m`, `3d 4h`)
-- health dot (ok/error)
-- trend arrow (`↑` / `↓`) vs previous refresh
-- quick `Open Dashboard ↗` links
-- last refresh time (`Updated ... ago`)
+- per-provider usage bars: `5h`, `7d` (Claude also shows `sn`)
+- per-bar remaining time: `2h 15m`, `3d 4h`
+- health dot, trend arrows (`↑`/`↓`), `Open Dashboard ↗`, `Updated ... ago`
 
 ## Shortcuts
 
@@ -69,54 +69,37 @@ Note: same-provider alerts use a 30-minute cooldown, so repeated alerts do not f
 - `⌘D`: Claude Dashboard
 - `⌘Q`: Quit
 
-## Requirements
+## Update / Uninstall
 
-| Item | Minimum |
-|---|---|
-| OS | macOS 14 or later |
-| Xcode | 16 or later (includes Swift 6) |
-| Git | Required |
-| Network | Required for provider API requests |
-
-Check environment:
-
-```bash
-swift --version
-git --version
-```
-
-## Update
+**Update**
 
 ```bash
 cd AI_Provider_Usage_monitor_for_mac
 git pull
-./Scripts/install_app.sh
+./install.sh
 ```
 
-## Changelog
+**Uninstall**
 
-### 2026-02-13 (Latest)
-
-- Dropdown: removed `Sonnet Only` badge
-- Dropdown: improved per-row remaining-time fallback for Codex/other providers
-- Claude reset-time parsing hardened (epoch/ISO8601/fractional ISO8601)
-- Added notification diagnostics in Settings (`Re-check`, `Request permission`, `Send test alert`)
-- README: added required Notification Setup section
-- README: replaced visuals with two latest screenshots
-- Icon: removed opaque background and regenerated `UsageMonitor.icns`
+```bash
+cd AI_Provider_Usage_monitor_for_mac
+./uninstall.sh
+```
 
 <details>
-<summary>2026-02-12 Changes (collapsed)</summary>
+<summary>Manual uninstall</summary>
 
-- release packaging updates
-- fixed Swift 6 actor-isolation build errors
-- fixed Codex auth error
-- adjusted status bar length
-- README updates
+```bash
+rm -rf /Applications/UsageMonitor.app
+# or if installed in ~/Applications
+rm -rf ~/Applications/UsageMonitor.app
+defaults delete com.choihwanil.usagemonitor 2>/dev/null || true
+rm -rf ~/Library/Application\ Support/UsageMonitor
+```
 
 </details>
 
-## Common Issues
+## Troubleshooting
 
 ### 1) Only `No data`
 
@@ -141,12 +124,27 @@ git pull
 xcode-select --install
 ```
 
-If needed, install Xcode 16+ and try again.
+### 5) Install fails
 
-## Why Source Install Instead of DMG?
+- check log: `cat ${TMPDIR:-/tmp}/usagemonitor-install.log`
+- inspect the last error lines first
+- if it keeps failing, attach full log in an issue
 
-Downloaded DMG apps can be blocked by macOS Gatekeeper.
-Local source build/install is the most reliable path for now.
+## Requirements
+
+| Item | Minimum |
+|---|---|
+| OS | macOS 14 or later |
+| Xcode | 16 or later (includes Swift 6) |
+| Git | Required |
+| Network | Required for provider API requests |
+
+Check environment:
+
+```bash
+swift --version
+git --version
+```
 
 ## Development
 
@@ -154,7 +152,42 @@ Local source build/install is the most reliable path for now.
 swift build
 swift test
 ./Scripts/package_app.sh
+GOOGLE_GENERATIVE_AI_API_KEY=... python3 Scripts/generate_icon_with_gemini.py --output Assets/icon-gemini-raw.png
 ```
+
+## FAQ
+
+### Why source install instead of DMG?
+
+Downloaded DMG apps can be blocked by macOS Gatekeeper.
+Local source build/install is the most reliable path for now.
+
+<details>
+<summary><strong>Changelog</strong></summary>
+
+### 2026-02-13 (Latest)
+
+- Dropdown: removed `Sonnet Only` badge
+- Dropdown: improved per-row remaining-time fallback for Codex/other providers
+- Claude reset-time parsing hardened
+- Added notification diagnostics in Settings (`Re-check`, `Request permission`, `Send test alert`)
+- README: added required notification setup section
+- README: added hero statement + reorganized docs around Quick Start
+- README: kept a single primary menu screenshot
+- Install: added root `./install.sh` + `./uninstall.sh` scripts
+- Installer banner: fixed `EXHAUSTED` line alignment/output
+- Icon: fully replaced from `docs/images/final_logo.png` and regenerated `UsageMonitor.icns`
+- Tooling: added `Scripts/generate_icon_with_gemini.py`
+
+### 2026-02-12
+
+- release packaging updates
+- fixed Swift 6 actor-isolation build errors
+- fixed Codex auth error
+- adjusted status bar length
+- README updates
+
+</details>
 
 ## License
 

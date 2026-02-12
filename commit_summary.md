@@ -54,7 +54,47 @@ Files:
 - `docs/images/screenshot-menu-2026-02-13.png`
 - `docs/images/screenshot-settings-2026-02-13.png`
 
+### 5) Installer UX Upgrade
+- Added root `./install.sh` entry point for one-command installation.
+- Upgraded installer output with step-based progress, spinner animation, log file path, fireworks effect, and final large ASCII banner.
+
+Files:
+- `install.sh`
+- `Scripts/install_app.sh`
+- `README.md`
+- `README_EN.md`
+
+### 6) README Readability Refresh
+- Added centered hero statement: `WORK UNTIL USAGE IS EXHAUSTED.`
+- Reorganized docs into Quick Start -> Features -> Update/Uninstall -> Troubleshooting flow.
+- Added explicit uninstall docs and install failure log troubleshooting.
+- Collapsed full changelog with `<details>` for better scanability.
+- Switched visuals to a single primary menu screenshot.
+
+Files:
+- `README.md`
+- `README_EN.md`
+
+### 7) Icon Final Replacement
+- Replaced application icon assets with user-provided `docs/images/final_logo.png`.
+- Regenerated `UsageMonitor.icns` from the new 1024x1024 source.
+
+Files:
+- `docs/images/final_logo.png`
+- `Assets/usage-monitor-icon.png`
+- `Assets/UsageMonitor.icns`
+- `docs/images/app-icon.png`
+
+### 8) Gemini Icon Tooling
+- Added a direct Gemini API icon generation script using `GOOGLE_GENERATIVE_AI_API_KEY`.
+- Included model fallback handling and PNG output support.
+
+Files:
+- `Scripts/generate_icon_with_gemini.py`
+
 ## Planned Commit Units
 
-1. `docs(readme): replace screenshots and add required notification setup`
-2. `fix(assets): remove app icon background and refresh icon resources`
+1. `feat(installer): add root install/uninstall flow and polish banner output`
+2. `docs(readme): add hero title and reorganize setup documentation`
+3. `feat(tooling): add gemini icon generation utility script`
+4. `fix(assets): replace app icon assets with final logo and regenerate icns`
