@@ -229,8 +229,8 @@ enum MenuBuilder {
                                       sonnetUsage: data?.sonnetUsage,
                                       sessionTrend: sessionTrend,
                                       sessionResetDate: data?.sessionResetDate ?? data?.resetDate,
-                                      weeklyResetDate: data?.weeklyResetDate,
-                                      sonnetResetDate: data?.sonnetResetDate,
+                                      weeklyResetDate: data?.weeklyResetDate ?? data?.resetDate,
+                                      sonnetResetDate: data?.sonnetResetDate ?? data?.weeklyResetDate ?? data?.resetDate,
                                       isSonnetOnly: data?.isSonnetOnly ?? false,
                                       error: error,
                                       hasError: error != nil, width: menuWidth)
@@ -337,29 +337,6 @@ private final class ProviderGaugeView: NSView {
                 : NSColor.systemGray.withAlphaComponent(0.5))
         dotColor.setFill()
         NSBezierPath(ovalIn: dotRect).fill()
-
-        if isSonnetOnly {
-            let badgeText = "Sonnet Only"
-            let badgeTextAttrs: [NSAttributedString.Key: Any] = [
-                .font: NSFont.systemFont(ofSize: 9, weight: .semibold),
-                .foregroundColor: NSColor.systemOrange
-            ]
-            let badgeTextSize = (badgeText as NSString).size(withAttributes: badgeTextAttrs)
-            let badgeHorizontalPad: CGFloat = 6
-            let badgeVerticalPad: CGFloat = 2
-            let badgeWidth = badgeTextSize.width + badgeHorizontalPad * 2
-            let badgeHeight = badgeTextSize.height + badgeVerticalPad * 2
-            let badgeX = bounds.width - pad - badgeWidth
-            let badgeY = titleY + (logoSize - badgeHeight) / 2
-
-            let badgeRect = NSRect(x: badgeX, y: badgeY, width: badgeWidth, height: badgeHeight)
-            NSColor.systemOrange.withAlphaComponent(0.15).setFill()
-            NSBezierPath(roundedRect: badgeRect, xRadius: badgeHeight / 2, yRadius: badgeHeight / 2).fill()
-
-            let textX = badgeX + (badgeWidth - badgeTextSize.width) / 2
-            let textY = badgeY + (badgeHeight - badgeTextSize.height) / 2
-            NSString(string: badgeText).draw(at: NSPoint(x: textX, y: textY), withAttributes: badgeTextAttrs)
-        }
 
         if let error {
             let errAttrs: [NSAttributedString.Key: Any] = [

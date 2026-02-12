@@ -133,7 +133,9 @@ public actor ClaudeProvider: Provider {
 
         let response = try JSONDecoder().decode(ClaudeUsageResponse.self, from: data)
         let isSonnetOnly = response.five_hour.utilization >= 80
-        let iso = ISO8601DateFormatter()
+        let sessionResetDate = parseResetDate(response.five_hour.resets_at)
+        let weeklyResetDate = parseResetDate(response.seven_day.resets_at)
+        let sonnetResetDate = response.seven_day_sonnet.flatMap { parseResetDate($0.resets_at) }
         
         return UsageData(
             provider: name,
@@ -141,13 +143,35 @@ public actor ClaudeProvider: Provider {
             weeklyUsage: response.seven_day.utilization,
             sonnetUsage: response.seven_day_sonnet?.utilization,
             remainingCredits: nil,
-            resetDate: iso.date(from: response.five_hour.resets_at),
-            sessionResetDate: iso.date(from: response.five_hour.resets_at),
-            weeklyResetDate: iso.date(from: response.seven_day.resets_at),
-            sonnetResetDate: response.seven_day_sonnet.flatMap { iso.date(from: $0.resets_at) },
+            resetDate: sessionResetDate,
+            sessionResetDate: sessionResetDate,
+            weeklyResetDate: weeklyResetDate,
+            sonnetResetDate: sonnetResetDate,
             isSonnetOnly: isSonnetOnly,
             lastUpdated: Date()
         )
+    }
+
+    private nonisolated func parseResetDate(_ rawValue: String) -> Date? {
+        let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else {
+            return nil
+        }
+
+        if let epoch = Double(value) {
+            let seconds = epoch > 10_000_000_000 ? epoch / 1000 : epoch
+            return Date(timeIntervalSince1970: seconds)
+        }
+
+        let fractionalFormatter = ISO8601DateFormatter()
+        fractionalFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let fractionalDate = fractionalFormatter.date(from: value) {
+            return fractionalDate
+        }
+
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.date(from: value)
     }
 
     private func readOAuth() -> ClaudeOAuthResult? {
