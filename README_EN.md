@@ -1,16 +1,16 @@
-# UsageMonitor
+# AIUsageMonitor
 
 <!-- MIRROR: keep section order aligned with README.md -->
 
 <div align="center">
-  <img src="docs/images/app-icon.png" alt="UsageMonitor App Icon" width="128" height="128" />
+  <img src="docs/images/app-icon.png" alt="AIUsageMonitor App Icon" width="256" height="256" />
 </div>
 
 <div align="center">
   <h1>WORK UNTIL USAGE IS EXHAUSTED.</h1>
 </div>
 
-UsageMonitor is a native macOS menu bar app that shows Claude, Codex, Copilot, Gemini, and OpenRouter usage at a glance.
+AIUsageMonitor is a native macOS menu bar app that shows Claude, Codex, Copilot, Gemini, and OpenRouter usage at a glance.
 
 [한국어 README](README.md)
 
@@ -58,7 +58,7 @@ gemini --help
 4. Confirm status shows `Notifications: Allowed`
 5. Click `Send test alert` and verify a banner appears
 
-If status is `Denied`, allow notifications in macOS `System Settings -> Notifications -> UsageMonitor`.
+If status is `Denied`, allow notifications in macOS `System Settings -> Notifications -> AIUsageMonitor`.
 
 ## Features
 
@@ -94,9 +94,9 @@ cd AI_Provider_Usage_monitor_for_mac
 <summary>Manual uninstall</summary>
 
 ```bash
-rm -rf /Applications/UsageMonitor.app
+rm -rf /Applications/AIUsageMonitor.app
 # or if installed in ~/Applications
-rm -rf ~/Applications/UsageMonitor.app
+rm -rf ~/Applications/AIUsageMonitor.app
 defaults delete com.choihwanil.usagemonitor 2>/dev/null || true
 rm -rf ~/Library/Application\ Support/UsageMonitor
 ```
@@ -166,23 +166,19 @@ GOOGLE_GENERATIVE_AI_API_KEY=... python3 Scripts/generate_icon_with_gemini.py --
 Downloaded DMG apps can be blocked by macOS Gatekeeper.
 Local source build/install is the most reliable path for now.
 
-<details>
-<summary><strong>Changelog</strong></summary>
+## Changelog
 
 ### 2026-02-13 (Latest)
 
-- Dropdown: removed `Sonnet Only` badge
-- Dropdown: improved per-row remaining-time fallback for Codex/other providers
-- Claude reset-time parsing hardened
-- Added notification diagnostics in Settings (`Re-check`, `Request permission`, `Send test alert`)
-- README: added required notification setup section
-- README: added hero statement + reorganized docs around Quick Start
-- README: added top app icon preview in hero section
-- README: kept a single primary menu screenshot
-- Install: added root `./install.sh` + `./uninstall.sh` scripts
-- Installer banner: fixed `EXHAUSTED` line alignment/output
-- Icon: fully replaced from `docs/images/logo.png` and regenerated `UsageMonitor.icns`
-- Tooling: added `Scripts/generate_icon_with_gemini.py`
+- Unified app branding to `AIUsageMonitor` (product/bundle/scripts/UI strings)
+- Fixed packaging/installer mismatch between executable name and app bundle name
+- Improved Codex dropdown to keep 5h and 7d remaining-time displays independent
+- Added Codex parser support for `rate_limit.primary_window`/`secondary_window` + `reset_at`/`reset_after_seconds`
+- Added guard logic to prevent false-positive Codex usage parsing (100% lock issue)
+- Synced KR/EN README updates and increased top icon size to 256x256
+
+<details>
+<summary>Previous changes</summary>
 
 ### 2026-02-12
 

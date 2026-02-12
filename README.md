@@ -1,16 +1,16 @@
-# UsageMonitor
+# AIUsageMonitor
 
 <!-- MIRROR: keep section order aligned with README_EN.md -->
 
 <div align="center">
-  <img src="docs/images/app-icon.png" alt="UsageMonitor App Icon" width="128" height="128" />
+  <img src="docs/images/app-icon.png" alt="AIUsageMonitor App Icon" width="256" height="256" />
 </div>
 
 <div align="center">
   <h1>WORK UNTIL USAGE IS EXHAUSTED.</h1>
 </div>
 
-Claude, Codex, Copilot, Gemini, OpenRouter 사용량을 macOS 메뉴바에서 한눈에 보는 앱입니다.
+AIUsageMonitor는 Claude, Codex, Copilot, Gemini, OpenRouter 사용량을 macOS 메뉴바에서 한눈에 보여주는 앱입니다.
 
 [English README](README_EN.md)
 
@@ -58,7 +58,7 @@ gemini --help
 4. 상태가 `Notifications: Allowed`인지 확인
 5. `Send test alert`로 실제 배너 확인
 
-`Denied`로 보이면 macOS `시스템 설정 -> 알림 -> UsageMonitor`에서 허용하세요.
+`Denied`로 보이면 macOS `시스템 설정 -> 알림 -> AIUsageMonitor`에서 허용하세요.
 
 ## Features
 
@@ -94,9 +94,9 @@ cd AI_Provider_Usage_monitor_for_mac
 <summary>수동 삭제</summary>
 
 ```bash
-rm -rf /Applications/UsageMonitor.app
+rm -rf /Applications/AIUsageMonitor.app
 # 또는 ~/Applications에 설치된 경우
-rm -rf ~/Applications/UsageMonitor.app
+rm -rf ~/Applications/AIUsageMonitor.app
 defaults delete com.choihwanil.usagemonitor 2>/dev/null || true
 rm -rf ~/Library/Application\ Support/UsageMonitor
 ```
@@ -165,23 +165,19 @@ GOOGLE_GENERATIVE_AI_API_KEY=... python3 Scripts/generate_icon_with_gemini.py --
 다운로드된 DMG 앱은 macOS Gatekeeper 정책 때문에 실행 차단될 수 있습니다.
 로컬에서 직접 빌드/설치하면 실행 문제가 가장 적습니다.
 
-<details>
-<summary><strong>변경 로그</strong></summary>
+## 변경 로그
 
 ### 2026-02-13 (최신)
 
-- 드롭다운: `Sonnet Only` 배지 제거
-- 드롭다운: Codex/기타 provider 남은 시간 fallback 보강
-- Claude reset 시간 파싱 강화
-- Notifications 설정 진단 추가 (`Re-check`, `Request permission`, `Send test alert`)
-- README: 알림 설정 방법(필수) 섹션 추가
-- README: Hero 문구 추가 + Quick Start 중심 구조로 재정리
-- README: 최상단에 앱 아이콘 미리보기 추가
-- README: 대표 메뉴 스크린샷 1장만 유지
-- 설치: 루트 `./install.sh` + `./uninstall.sh` 스크립트 추가
-- 설치 배너: `EXHAUSTED` 문구 정렬/출력 보정
-- 아이콘: `docs/images/logo.png` 기준으로 전면 교체 및 `UsageMonitor.icns` 재생성
-- 도구: `Scripts/generate_icon_with_gemini.py` 추가
+- 앱 이름을 `AIUsageMonitor`로 통합 (product/bundle/script/UI 문자열 정리)
+- 패키징/설치 스크립트에서 실행 파일명과 앱 번들명 불일치 문제 수정
+- Codex 드롭다운 5h/7d 남은 시간 분리 표시 로직 보강
+- Codex 파서에 `rate_limit.primary_window`/`secondary_window` + `reset_at`/`reset_after_seconds` 지원 추가
+- Codex 사용량 파싱 오탐(100% 고정) 방지 로직 추가
+- README KR/EN 동기화 및 상단 아이콘 크기(256x256) 조정
+
+<details>
+<summary>이전 변경 내역</summary>
 
 ### 2026-02-12
 
