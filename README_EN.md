@@ -35,6 +35,12 @@ Native macOS menu bar app for monitoring Claude, Codex, Copilot, Gemini, and Ope
 - Swift 6.0 toolchain (`swift --version`)
 - Network access
 
+## Direct Download (Recommended)
+
+- Latest release: `https://github.com/<YOUR_ACCOUNT>/AI_provider_usage_monitor/releases/latest`
+- Files: `UsageMonitor-vX.Y.Z-macOS.dmg` or `UsageMonitor-vX.Y.Z-macOS.zip`
+- For first launch, right-click the app and choose `Open`
+
 ## Quick Start
 
 ### 1) Run from source
@@ -59,6 +65,12 @@ What the install script does:
 2. Create `UsageMonitor.app`
 3. Copy to `/Applications` (or `~/Applications` if needed)
 4. Launch the app
+
+## Automatic Release
+
+- A GitHub Release is created automatically when you push a version tag.
+- Trigger: `git tag v1.0.0 && git push origin v1.0.0`
+- Generated assets: `UsageMonitor-v1.0.0-macOS.dmg`, `UsageMonitor-v1.0.0-macOS.zip`, `checksums-v1.0.0.txt`
 
 ## Why auth login is required
 

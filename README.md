@@ -36,6 +36,12 @@ macOS 메뉴바에서 Claude, Codex, Copilot, Gemini, OpenRouter 사용량을 �
 - Swift 6.0 toolchain (`swift --version`)
 - 네트워크 연결
 
+## 바로 다운로드 (권장)
+
+- 최신 릴리즈: `https://github.com/<YOUR_ACCOUNT>/AI_provider_usage_monitor/releases/latest`
+- 파일: `UsageMonitor-vX.Y.Z-macOS.dmg` 또는 `UsageMonitor-vX.Y.Z-macOS.zip`
+- 첫 실행 시 앱을 우클릭 후 `열기(Open)`로 실행
+
 ## 빠른 시작
 
 ### 1) 소스에서 바로 실행
@@ -60,6 +66,12 @@ open UsageMonitor.app
 2. `UsageMonitor.app` 생성
 3. `/Applications` (권한 없으면 `~/Applications`)에 복사
 4. 앱 실행
+
+## 자동 릴리즈
+
+- 태그를 푸시하면 GitHub Release가 자동 생성됩니다.
+- 트리거: `git tag v1.0.0 && git push origin v1.0.0`
+- 생성 파일: `UsageMonitor-v1.0.0-macOS.dmg`, `UsageMonitor-v1.0.0-macOS.zip`, `checksums-v1.0.0.txt`
 
 ## 인증이 필요한 이유 (중요)
 

@@ -5,6 +5,13 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: macos-14
@@ -17,28 +24,44 @@ jobs:
         uses: swift-actions/setup-swift@v2
         with:
           swift-version: "6.0"
+
+      - name: Resolve release metadata
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "ZIP_NAME=UsageMonitor-${TAG}-macOS.zip" >> "$GITHUB_ENV"
+          echo "DMG_NAME=UsageMonitor-${TAG}-macOS.dmg" >> "$GITHUB_ENV"
+          echo "CHECKSUM_NAME=checksums-${TAG}.txt" >> "$GITHUB_ENV"
       
       - name: Build app bundle
         run: |
           chmod +x Scripts/package_app.sh
           ./Scripts/package_app.sh
       
-      - name: Create ZIP archive
+      - name: Create release archives
         run: |
-          zip -r UsageMonitor.zip UsageMonitor.app
+          ditto -c -k --sequesterRsrc --keepParent UsageMonitor.app "${ZIP_NAME}"
+          hdiutil create -volname "UsageMonitor" -srcfolder "UsageMonitor.app" -ov -format UDZO "${DMG_NAME}"
+          shasum -a 256 "${ZIP_NAME}" "${DMG_NAME}" > "${CHECKSUM_NAME}"
       
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: UsageMonitor.zip
+          files: |
+            ${{ env.ZIP_NAME }}
+            ${{ env.DMG_NAME }}
+            ${{ env.CHECKSUM_NAME }}
+          generate_release_notes: true
           body: |
             ## UsageMonitor ${{ github.ref_name }}
             
             ### Installation
-            1. Download `UsageMonitor.zip`
-            2. Unzip the file
-            3. Move `UsageMonitor.app` to your Applications folder
-            4. Right-click and select "Open" (required for first launch)
+            1. Download `${{ env.DMG_NAME }}` or `${{ env.ZIP_NAME }}`
+            2. Move `UsageMonitor.app` to your Applications folder
+            3. Right-click and select "Open" for first launch
+            4. If a Keychain access prompt appears, select `Always Allow`
             
             ### What's New
             See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/CHANGELOG.md) for details.
@@ -57,5 +80,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: UsageMonitor-${{ github.ref_name }}
-          path: UsageMonitor.zip
+          path: |
+            ${{ env.ZIP_NAME }}
+            ${{ env.DMG_NAME }}
+            ${{ env.CHECKSUM_NAME }}
           retention-days: 90
