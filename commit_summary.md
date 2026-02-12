@@ -29,19 +29,32 @@ Files:
 - `Sources/UsageMonitor/UI/SettingsView.swift`
 - `Sources/UsageMonitor/Store/NotificationManager.swift`
 
-### 3) Documentation Simplification + Changelog
+### 3) Documentation + README UX Refresh
 - Rewrote KR/EN README into quick-start focused format.
 - Added dated changelog sections with latest date first.
 - Older date entries are collapsed using `<details>` blocks.
 - Synced KR/EN README structure.
+- Replaced top README visuals with latest app screenshots.
+- Added mandatory notification setup steps in KR/EN README.
 
 Files:
 - `README.md`
 - `README_EN.md`
 - `commit_summary.md`
 
+### 4) App Icon Transparency
+- Removed unintended opaque background from app icon source PNG.
+- Regenerated `UsageMonitor.icns` from transparent source.
+- Updated documentation app icon image to match transparent asset.
+
+Files:
+- `Assets/usage-monitor-icon.png`
+- `Assets/UsageMonitor.icns`
+- `docs/images/app-icon.png`
+- `docs/images/screenshot-menu-2026-02-13.png`
+- `docs/images/screenshot-settings-2026-02-13.png`
+
 ## Planned Commit Units
 
-1. `fix(ui): remove sonnet badge and stabilize remaining-time parsing`
-2. `feat(notifications): add settings diagnostics and test alert action`
-3. `docs(readme): simplify guides and add dated changelog`
+1. `docs(readme): replace screenshots and add required notification setup`
+2. `fix(assets): remove app icon background and refresh icon resources`

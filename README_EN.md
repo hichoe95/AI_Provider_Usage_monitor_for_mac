@@ -8,7 +8,8 @@ UsageMonitor is a native macOS menu bar app that shows Claude, Codex, Copilot, G
 ![Swift](https://img.shields.io/badge/Swift-6.0-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-![UsageMonitor Dropdown Demo](docs/images/usage-monitor-demo.gif)
+![UsageMonitor Menu Screenshot](docs/images/screenshot-menu-2026-02-13.png)
+![UsageMonitor Settings Screenshot](docs/images/screenshot-settings-2026-02-13.png)
 
 ## 1-Minute Install (Recommended)
 
@@ -39,6 +40,18 @@ codex --help
 gh --help
 gemini --help
 ```
+
+## Notification Setup (Required)
+
+1. Open menu bar icon -> `Settings...` -> `Notifications`
+2. Turn ON `Enable usage alerts`
+3. Click `Request permission`
+4. Confirm status shows `Notifications: Allowed`
+5. Click `Send test alert` and verify a real banner appears
+
+If status is `Denied`, open macOS `System Settings -> Notifications -> UsageMonitor` and allow notifications.
+
+Note: same-provider alerts use a 30-minute cooldown, so repeated alerts do not fire immediately.
 
 ## What You See in the Menu
 
@@ -88,6 +101,9 @@ git pull
 - Dropdown: improved per-row remaining-time fallback for Codex/other providers
 - Claude reset-time parsing hardened (epoch/ISO8601/fractional ISO8601)
 - Added notification diagnostics in Settings (`Re-check`, `Request permission`, `Send test alert`)
+- README: added required Notification Setup section
+- README: replaced visuals with two latest screenshots
+- Icon: removed opaque background and regenerated `UsageMonitor.icns`
 
 <details>
 <summary>2026-02-12 Changes (collapsed)</summary>

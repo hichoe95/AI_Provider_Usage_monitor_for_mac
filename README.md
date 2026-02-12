@@ -8,7 +8,8 @@ Claude, Codex, Copilot, Gemini, OpenRouter 사용량을 macOS 메뉴바에서 �
 ![Swift](https://img.shields.io/badge/Swift-6.0-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-![UsageMonitor Dropdown Demo](docs/images/usage-monitor-demo.gif)
+![UsageMonitor Menu Screenshot](docs/images/screenshot-menu-2026-02-13.png)
+![UsageMonitor Settings Screenshot](docs/images/screenshot-settings-2026-02-13.png)
 
 ## 1분 설치 (권장)
 
@@ -39,6 +40,18 @@ codex --help
 gh --help
 gemini --help
 ```
+
+## 알림 설정 방법 (필수)
+
+1. 메뉴바 아이콘 -> `Settings...` -> `Notifications` 섹션 이동
+2. `Enable usage alerts` ON
+3. `Request permission` 클릭
+4. 상태가 `Notifications: Allowed`인지 확인
+5. `Send test alert` 클릭 후 실제 배너 표시 확인
+
+권한 상태가 `Denied`라면 macOS `시스템 설정 -> 알림 -> UsageMonitor`에서 허용으로 변경하세요.
+
+참고: 같은 provider 알림은 30분 쿨다운이 있어 바로 연속으로 재알림되지 않습니다.
 
 ## 메뉴에서 바로 보이는 것
 
@@ -88,6 +101,9 @@ git pull
 - 드롭다운: Codex/기타 provider의 남은 시간 표기를 각 라인에서 더 안정적으로 보이도록 fallback 보강
 - Claude reset 시간 파싱 강화 (epoch/ISO8601/소수초 ISO8601 지원)
 - Notifications 설정 진단 추가 (`Re-check`, `Request permission`, `Send test alert`)
+- README: 알림 설정 방법(필수) 섹션 추가
+- README: 스크린샷 2장으로 교체
+- 아이콘: 배경 투명화 및 `UsageMonitor.icns` 재생성
 
 <details>
 <summary>2026-02-12 변경 (접기)</summary>
