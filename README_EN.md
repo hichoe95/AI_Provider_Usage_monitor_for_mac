@@ -1,6 +1,6 @@
 # UsageMonitor
 
-Native macOS menu bar app for monitoring Claude, Codex, Copilot, Gemini, and OpenRouter usage.
+UsageMonitor is a native macOS menu bar app that shows Claude, Codex, Copilot, Gemini, and OpenRouter usage at a glance.
 
 [한국어 README](README.md)
 
@@ -9,42 +9,8 @@ Native macOS menu bar app for monitoring Claude, Codex, Copilot, Gemini, and Ope
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ![UsageMonitor Dropdown Demo](docs/images/usage-monitor-demo.gif)
-![UsageMonitor Dropdown](docs/images/usage-monitor-dropdown.png)
 
-## Screenshots
-
-### Default App View
-
-![Default View Screenshot](docs/images/default-view-example.png)
-
-### Notification Example
-
-![Notification Screenshot](docs/images/notification-example.png)
-
-## Features
-
-- Menu bar usage indicators (5h / 7d style gauges)
-- OpenRouter remaining credits ($)
-- Per-provider on/off, refresh interval, alert thresholds
-- Keychain/local auth-session based data collection
-
-## Requirements
-
-| Item | Minimum |
-|------|---------|
-| **OS** | macOS 14 (Sonoma) or later |
-| **Architecture** | Apple Silicon / Intel both supported |
-| **Xcode** | 16.0 or later (includes Swift 6.0 toolchain) |
-| **Swift** | 6.0 or later (verify with `swift --version`) |
-| **Git** | Required (verify with `git --version`) |
-| **Network** | Needed for package resolution at build time + runtime API calls |
-| **Disk** | ~500MB (excluding Xcode, including build cache) |
-
-> **No Xcode?** Install [Xcode](https://apps.apple.com/app/xcode/id497799835) from the App Store, or run `xcode-select --install` for Command Line Tools only and then install the [Swift 6.0 toolchain](https://www.swift.org/install/) separately.
-
-## Installation
-
-### One-liner install (recommended)
+## 1-Minute Install (Recommended)
 
 ```bash
 git clone https://github.com/hichoe95/AI_Provider_Usage_monitor_for_mac.git
@@ -52,24 +18,61 @@ cd AI_Provider_Usage_monitor_for_mac
 ./Scripts/install_app.sh
 ```
 
-What the install script does automatically:
+`install_app.sh` does this automatically:
+- release build
+- create `UsageMonitor.app`
+- copy to `/Applications` (or `~/Applications` if needed)
+- remove quarantine attribute
+- launch app
 
-1. Build in release mode
-2. Create `UsageMonitor.app` bundle
-3. Copy to `/Applications` (or `~/Applications` if permissions are limited)
-4. Launch the app
+## First 30 Seconds Setup
 
-### Manual build
+1. Run provider login in the terminal on the same local Mac
+2. Click menu bar icon -> `Settings...` -> enable providers you use
+3. Click `Refresh Now` (⌘R)
+
+CLI login commands differ by version, so check `--help`:
 
 ```bash
-git clone https://github.com/hichoe95/AI_Provider_Usage_monitor_for_mac.git
-cd AI_Provider_Usage_monitor_for_mac
-swift build -c release
-./Scripts/package_app.sh
-open UsageMonitor.app
+claude --help
+codex --help
+gh --help
+gemini --help
 ```
 
-### Update
+## What You See in the Menu
+
+- per-provider bars: `5h`, `7d`, and `sn` for Claude
+- per-bar remaining time until reset (e.g. `2h 15m`, `3d 4h`)
+- health dot (ok/error)
+- trend arrow (`↑` / `↓`) vs previous refresh
+- quick `Open Dashboard ↗` links
+- last refresh time (`Updated ... ago`)
+
+## Shortcuts
+
+- `⌘R`: Refresh Now
+- `⌘,`: Settings
+- `⌘D`: Claude Dashboard
+- `⌘Q`: Quit
+
+## Requirements
+
+| Item | Minimum |
+|---|---|
+| OS | macOS 14 or later |
+| Xcode | 16 or later (includes Swift 6) |
+| Git | Required |
+| Network | Required for provider API requests |
+
+Check environment:
+
+```bash
+swift --version
+git --version
+```
+
+## Update
 
 ```bash
 cd AI_Provider_Usage_monitor_for_mac
@@ -77,133 +80,57 @@ git pull
 ./Scripts/install_app.sh
 ```
 
-## Why auth login is required
+## Changelog
 
-UsageMonitor calls each provider's usage API directly. Those APIs require identity/authentication (OAuth token or API key). Without valid auth credentials, the app cannot fetch usage data and will show `No data` or auth errors.
+### 2026-02-13 (Latest)
 
-## Where should I run auth login?
+- Dropdown: removed `Sonnet Only` badge
+- Dropdown: improved per-row remaining-time fallback for Codex/other providers
+- Claude reset-time parsing hardened (epoch/ISO8601/fractional ISO8601)
+- Added notification diagnostics in Settings (`Re-check`, `Request permission`, `Send test alert`)
 
-Short answer: **run auth login in the terminal on the same local Mac where UsageMonitor is running**.
+<details>
+<summary>2026-02-12 Changes (collapsed)</summary>
 
-Why:
+- release packaging updates
+- fixed Swift 6 actor-isolation build errors
+- fixed Codex auth error
+- adjusted status bar length
+- README updates
 
-- UsageMonitor reads auth data from the current local macOS user context:
-  - `~/.claude`, `~/.codex`, `~/.copilot`, `~/.gemini`
-  - macOS Keychain
-- If you log in on a remote server (SSH/cloud/devcontainer), credentials are stored on that server.
-- The macOS menu bar app on your local machine cannot automatically use server-side auth files/keychain.
+</details>
 
-So even if most development happens on servers, you should still run provider auth login locally for UsageMonitor.
+## Common Issues
 
-If a Keychain access prompt appears, choose **`Always Allow`**. If you choose only `Allow`, the prompt may appear repeatedly on future refreshes.
+### 1) Only `No data`
 
-## Auth sources by provider
+- make sure provider login exists on local Mac
+- make sure app and terminal use the same macOS user account
+- click `Refresh Now`
 
-### Claude Code
+### 2) Repeated Keychain prompts
 
-Priority:
+- choose `Always Allow` when prompted
+- if you already chose `Allow`, update permissions in Keychain Access
 
-1. Keychain `Claude Code-credentials`
-2. `~/.claude/.credentials.json`
-3. `~/.claude/auth.json`
+### 3) OpenRouter not showing
 
-### Codex
+- enable OpenRouter in Settings
+- save API key
+- click `Refresh Now`
 
-- Uses OAuth token from `~/.codex/auth.json`
-- Requires an active Codex CLI login session
+### 4) `swift` not found
 
-### Copilot
+```bash
+xcode-select --install
+```
 
-Priority:
+If needed, install Xcode 16+ and try again.
 
-1. `GH_TOKEN` / `GITHUB_TOKEN` / `COPILOT_TOKEN`
-2. Keychain `copilot-access-token`
-3. `~/.copilot/config.json`
-4. `~/.config/github-copilot/apps.json`
-5. `~/.config/github-copilot/hosts.json`
-6. `~/.config/gh/hosts.yml` (`oauth_token`)
+## Why Source Install Instead of DMG?
 
-### Gemini
-
-Priority:
-
-1. OAuth files like `~/.gemini/oauth_creds.json`
-2. `GEMINI_API_KEY` / `GOOGLE_API_KEY`
-3. Keychain `gemini-api-key`
-4. `~/.gemini/.env`
-
-### OpenRouter
-
-- API key is saved from Settings into Keychain (`openrouter-api-key`)
-- Disabled by default until enabled in Settings
-
-## Recommended setup flow
-
-1. Run provider logins in your local terminal (Claude/Codex/Copilot/Gemini)
-2. Launch `UsageMonitor.app`
-3. Click `Refresh Now`
-4. Enable only the providers you use in Settings
-
-CLI commands vary by version, so check each tool's help:
-`codex --help`, `claude --help`, `gemini --help`, `gh --help`
-
-## App usage
-
-1. Click the menu bar icon
-2. Check per-provider usage gauges
-3. Check OpenRouter credits
-4. Use `Refresh Now` for immediate updates
-5. Open `Settings...` for configuration
-
-## Settings
-
-- Provider toggles
-- Refresh interval (1m / 5m / 15m)
-- Detailed menu bar view toggle
-- Notifications toggle
-- Per-provider thresholds
-- OpenRouter API key save
-
-## Notifications
-
-- Claude/Codex/Copilot/Gemini: alerts when usage exceeds threshold
-- OpenRouter: alerts when credits drop below threshold
-- Repeated alerts are cooldown-controlled
-
-## Troubleshooting
-
-### 1) Only `No data` appears
-
-- Verify provider login exists locally
-- Verify the app runs under the same macOS user account used for login
-- Click `Refresh Now`
-
-### 2) Generic operation error
-
-- Update to latest code and rebuild
-- Check full provider error text in dropdown
-
-### 3) OpenRouter icon or amount not visible
-
-- Ensure OpenRouter is enabled in Settings
-- Ensure API key is saved
-- Click `Refresh Now`
-
-### 4) Works on server, not on local menu bar app
-
-- Auth exists only on server side.
-- Run provider auth login on your local Mac.
-
-### 5) Repeated Keychain prompts
-
-- Choose `Always Allow` in the access prompt.
-- If already set to `Allow`, open Keychain Access and change app access to `Always Allow`.
-
-## Security notes
-
-- Credentials are read from local auth files and Keychain whenever possible
-- OpenRouter API key entered in Settings is stored in Keychain
-- URL/app transient caches are cleaned on app launch (settings and keychain data are preserved)
+Downloaded DMG apps can be blocked by macOS Gatekeeper.
+Local source build/install is the most reliable path for now.
 
 ## Development
 
@@ -211,19 +138,6 @@ CLI commands vary by version, so check each tool's help:
 swift build
 swift test
 ./Scripts/package_app.sh
-```
-
-## Project structure
-
-```text
-AI_provider_usage_monitor/
-├── Assets/
-├── docs/images/
-├── Scripts/
-├── Sources/
-│   ├── UsageMonitor/
-│   └── UsageMonitorCore/
-└── Package.swift
 ```
 
 ## License
