@@ -1,0 +1,61 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: macos-14
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "6.0"
+      
+      - name: Build app bundle
+        run: |
+          chmod +x Scripts/package_app.sh
+          ./Scripts/package_app.sh
+      
+      - name: Create ZIP archive
+        run: |
+          zip -r UsageMonitor.zip UsageMonitor.app
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: UsageMonitor.zip
+          body: |
+            ## UsageMonitor ${{ github.ref_name }}
+            
+            ### Installation
+            1. Download `UsageMonitor.zip`
+            2. Unzip the file
+            3. Move `UsageMonitor.app` to your Applications folder
+            4. Right-click and select "Open" (required for first launch)
+            
+            ### What's New
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/CHANGELOG.md) for details.
+            
+            ### Requirements
+            - macOS 14.0 (Sonoma) or later
+            
+            ### Supported Providers
+            - Claude Code (OAuth)
+            - Codex/ChatGPT (OAuth)
+            - OpenRouter (API key)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: UsageMonitor-${{ github.ref_name }}
+          path: UsageMonitor.zip
+          retention-days: 90

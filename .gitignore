@@ -1,0 +1,39 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Xcode / Derived Data
+DerivedData/
+*.xcworkspace/xcuserdata/
+*.xcuserdatad/
+*.xcuserstate
+
+# Build artifacts
+UsageMonitor.app/
+*.dSYM/
+*.dSYM.zip
+*.xcarchive
+*.ipa
+*.pkg
+*.zip
+
+# Logs / diagnostics
+*.log
+*.tmp
+*.swp
+*.swo
+*.ips
+
+# Local environment / secrets
+.env.local
+.env.*.local
+.sisyphus
+.sisyphus/
+
+# Local screenshot files often dropped in repo root
+/스크린샷 *.png
