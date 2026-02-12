@@ -1,6 +1,7 @@
 import SwiftUI
 import UsageMonitorCore
 
+@MainActor
 struct SettingsView: View {
     @StateObject private var settings = SettingsStore()
     @State private var openRouterKey: String = ""
