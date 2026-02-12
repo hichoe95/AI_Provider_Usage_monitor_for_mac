@@ -69,10 +69,10 @@ enum IconRenderer {
         openRouter: OpenRouterSegmentData?,
         isStale: Bool = false
     ) -> NSImage {
-        let providerWidth: CGFloat = 36
+        let providerWidth: CGFloat = 40
         let providerSpacing: CGFloat = 5
-        let leftPad: CGFloat = 5
-        let rightPad: CGFloat = 5
+        let leftPad: CGFloat = 2
+        let rightPad: CGFloat = 2
         let height: CGFloat = 22
 
         let providersWidth: CGFloat = barProviders.isEmpty
@@ -120,7 +120,7 @@ enum IconRenderer {
         context: CGContext,
         totalHeight: CGFloat
     ) {
-        let iconSize: CGFloat = 13
+        let iconSize: CGFloat = 17
         let iconRect = CGRect(
             x: x,
             y: (totalHeight - iconSize) / 2,
@@ -142,6 +142,11 @@ enum IconRenderer {
         let barsOriginY = (totalHeight - (barHeight * 2 + barGap)) / 2
         let weeklyY = barsOriginY
         let sessionY = barsOriginY + barHeight + barGap
+
+        let trackColor = NSColor.tertiaryLabelColor.withAlphaComponent(0.2).cgColor
+        context.setFillColor(trackColor)
+        context.fill(CGRect(x: barX, y: sessionY, width: barWidth, height: barHeight))
+        context.fill(CGRect(x: barX, y: weeklyY, width: barWidth, height: barHeight))
 
         if let session = provider.session {
             let pct = normalizedPercent(session)
@@ -179,7 +184,7 @@ enum IconRenderer {
         context: CGContext,
         totalHeight: CGFloat
     ) {
-        let iconSize: CGFloat = 13
+        let iconSize: CGFloat = 17
         let iconRect = CGRect(
             x: x,
             y: (totalHeight - iconSize) / 2,
@@ -205,7 +210,7 @@ enum IconRenderer {
     }
 
     private static func openRouterSegmentWidth(_ openRouter: OpenRouterSegmentData) -> CGFloat {
-        let iconSize: CGFloat = 13
+        let iconSize: CGFloat = 17
         let textGap: CGFloat = 4
         let rightPad: CGFloat = 5
         guard let credits = openRouter.credits else {

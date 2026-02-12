@@ -3,6 +3,7 @@ import Foundation
 struct ClaudeUsageResponse: Codable, Sendable {
     let five_hour: UsageWindow
     let seven_day: UsageWindow
+    let seven_day_sonnet: UsageWindow?
 }
 
 struct UsageWindow: Codable, Sendable {

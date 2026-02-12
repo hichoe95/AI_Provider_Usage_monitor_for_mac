@@ -28,6 +28,70 @@ enum ProviderLogo {
     static var openRouter: NSImage? { load("openrouter_logo") ?? load("openrouter") }
 }
 
+private final class TimestampView: NSView {
+    private let lastUpdated: Date
+    private let pad: CGFloat = 14
+
+    init(lastUpdated: Date, width: CGFloat) {
+        self.lastUpdated = lastUpdated
+        super.init(frame: NSRect(x: 0, y: 0, width: width, height: 20))
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+
+        let relativeTime = formatRelativeTime(lastUpdated)
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 10),
+            .foregroundColor: NSColor.secondaryLabelColor
+        ]
+        let textSize = (relativeTime as NSString).size(withAttributes: attrs)
+        let x = (bounds.width - textSize.width) / 2
+        NSString(string: relativeTime).draw(at: NSPoint(x: x, y: 4), withAttributes: attrs)
+    }
+
+    private func formatRelativeTime(_ date: Date) -> String {
+        let now = Date()
+        let interval = now.timeIntervalSince(date)
+
+        if interval < 60 {
+            return "Updated just now"
+        } else if interval < 3600 {
+            let minutes = Int(interval / 60)
+            return "Updated \(minutes)m ago"
+        } else {
+            let hours = Int(interval / 3600)
+            return "Updated \(hours)h ago"
+        }
+    }
+}
+
+@MainActor
+private final class MenuActionHandler: NSObject {
+    static let shared = MenuActionHandler()
+
+    @objc func openSettings(_ sender: NSMenuItem) {
+        if let onSettings = sender.representedObject as? (() -> Void) {
+            onSettings()
+        }
+    }
+
+    @objc func handleRefresh(_ sender: NSMenuItem) {
+        if let onRefresh = sender.representedObject as? (() -> Void) {
+            onRefresh()
+        }
+    }
+
+    @objc func openDashboard(_ sender: NSMenuItem) {
+        if let urlString = sender.representedObject as? String,
+           let url = URL(string: urlString) {
+            NSWorkspace.shared.open(url)
+        }
+    }
+}
+
 enum MenuBuilder {
     private static let menuWidth: CGFloat = 300
 
@@ -38,8 +102,10 @@ enum MenuBuilder {
         copilotData: UsageData?,
         geminiData: UsageData?,
         openRouterData: UsageData?,
+        sessionTrends: [String: Double],
         isLoading: Bool,
         providerErrors: [String: String],
+        lastUpdated: Date?,
         onRefresh: @escaping () -> Void,
         onSettings: @escaping () -> Void
     ) -> NSMenu {
@@ -67,38 +133,48 @@ enum MenuBuilder {
 
         var hasProviderSection = false
 
-        if claudeEnabled {
-            addGaugeItem(to: menu, name: "Claude", logo: ProviderLogo.claude, color: BrandColor.claude,
-                         data: claudeData, error: providerErrors["Claude Code"])
-            hasProviderSection = true
+        let anyProviderEnabled = claudeEnabled || codexEnabled || copilotEnabled || geminiEnabled || openRouterEnabled
+        if anyProviderEnabled {
+            addHeaderItem(to: menu, title: "PROVIDERS")
         }
 
-        if codexEnabled {
-            if hasProviderSection { menu.addItem(NSMenuItem.separator()) }
-            addGaugeItem(to: menu, name: "Codex", logo: ProviderLogo.codex, color: BrandColor.codex,
-                         data: codexData, error: providerErrors["Codex"])
-            hasProviderSection = true
-        }
+         if claudeEnabled {
+               addGaugeItem(to: menu, name: "Claude", logo: ProviderLogo.claude, color: BrandColor.claude,
+                            data: claudeData, sessionTrend: sessionTrends["Claude"], error: providerErrors["Claude Code"])
+               addDashboardItem(to: menu, urlString: "https://claude.ai/settings/usage", keyEquivalent: "d")
+               hasProviderSection = true
+           }
 
-        if copilotEnabled {
-            if hasProviderSection { menu.addItem(NSMenuItem.separator()) }
-            addGaugeItem(to: menu, name: "Copilot", logo: ProviderLogo.copilot, color: BrandColor.copilot,
-                         data: copilotData, error: providerErrors["Copilot"])
-            hasProviderSection = true
-        }
+          if codexEnabled {
+              if hasProviderSection { menu.addItem(NSMenuItem.separator()) }
+              addGaugeItem(to: menu, name: "Codex", logo: ProviderLogo.codex, color: BrandColor.codex,
+                           data: codexData, sessionTrend: sessionTrends["Codex"], error: providerErrors["Codex"])
+              addDashboardItem(to: menu, urlString: "https://chatgpt.com/codex/settings/usage")
+              hasProviderSection = true
+          }
 
-        if geminiEnabled {
-            if hasProviderSection { menu.addItem(NSMenuItem.separator()) }
-            addGaugeItem(to: menu, name: "Gemini", logo: ProviderLogo.gemini, color: BrandColor.gemini,
-                         data: geminiData, error: providerErrors["Gemini"])
-            hasProviderSection = true
-        }
+          if copilotEnabled {
+              if hasProviderSection { menu.addItem(NSMenuItem.separator()) }
+              addGaugeItem(to: menu, name: "Copilot", logo: ProviderLogo.copilot, color: BrandColor.copilot,
+                           data: copilotData, sessionTrend: sessionTrends["Copilot"], error: providerErrors["Copilot"])
+              addDashboardItem(to: menu, urlString: "https://github.com/settings/copilot")
+              hasProviderSection = true
+          }
 
-        if openRouterEnabled {
-            if hasProviderSection { menu.addItem(NSMenuItem.separator()) }
-            addOpenRouterItem(to: menu, data: openRouterData, error: providerErrors["OpenRouter"])
-            hasProviderSection = true
-        }
+          if geminiEnabled {
+              if hasProviderSection { menu.addItem(NSMenuItem.separator()) }
+              addGaugeItem(to: menu, name: "Gemini", logo: ProviderLogo.gemini, color: BrandColor.gemini,
+                           data: geminiData, sessionTrend: sessionTrends["Gemini"], error: providerErrors["Gemini"])
+              addDashboardItem(to: menu, urlString: "https://aistudio.google.com/apikey")
+              hasProviderSection = true
+          }
+
+         if openRouterEnabled {
+             if hasProviderSection { menu.addItem(NSMenuItem.separator()) }
+             addOpenRouterItem(to: menu, data: openRouterData, error: providerErrors["OpenRouter"])
+             addDashboardItem(to: menu, urlString: "https://openrouter.ai/settings/credits")
+             hasProviderSection = true
+         }
 
         if !hasProviderSection {
             let item = NSMenuItem(title: "No providers enabled", action: nil, keyEquivalent: "")
@@ -107,6 +183,13 @@ enum MenuBuilder {
         }
 
         menu.addItem(NSMenuItem.separator())
+
+        if let lastUpdated {
+            let timestampItem = NSMenuItem()
+            timestampItem.view = TimestampView(lastUpdated: lastUpdated, width: menuWidth)
+            menu.addItem(timestampItem)
+            menu.addItem(NSMenuItem.separator())
+        }
 
         let refreshItem = NSMenuItem(title: "Refresh Now", action: #selector(MenuActionHandler.handleRefresh), keyEquivalent: "r")
         refreshItem.target = MenuActionHandler.shared
@@ -125,12 +208,32 @@ enum MenuBuilder {
     }
 
     @MainActor
+    private static func addHeaderItem(to menu: NSMenu, title: String) {
+        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        item.isEnabled = false
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 9, weight: .semibold),
+            .foregroundColor: NSColor.tertiaryLabelColor
+        ]
+        item.attributedTitle = NSAttributedString(string: title, attributes: attrs)
+        menu.addItem(item)
+    }
+
+    @MainActor
     private static func addGaugeItem(to menu: NSMenu, name: String, logo: NSImage?, color: NSColor,
-                                     data: UsageData?, error: String?) {
+                                     data: UsageData?, sessionTrend: Double?, error: String?) {
         let item = NSMenuItem()
         item.view = ProviderGaugeView(name: name, logo: logo, color: color,
-                                      sessionUsage: data?.sessionUsage, weeklyUsage: data?.weeklyUsage,
-                                      error: error, width: menuWidth)
+                                      sessionUsage: data?.sessionUsage,
+                                      weeklyUsage: data?.weeklyUsage,
+                                      sonnetUsage: data?.sonnetUsage,
+                                      sessionTrend: sessionTrend,
+                                      sessionResetDate: data?.sessionResetDate ?? data?.resetDate,
+                                      weeklyResetDate: data?.weeklyResetDate,
+                                      sonnetResetDate: data?.sonnetResetDate,
+                                      isSonnetOnly: data?.isSonnetOnly ?? false,
+                                      error: error,
+                                      hasError: error != nil, width: menuWidth)
         menu.addItem(item)
     }
 
@@ -138,9 +241,24 @@ enum MenuBuilder {
     private static func addOpenRouterItem(to menu: NSMenu, data: UsageData?, error: String?) {
         let item = NSMenuItem()
         item.view = OpenRouterGaugeView(remainingCredits: data?.remainingCredits,
-                                        error: error, width: menuWidth)
+                                        error: error, hasError: error != nil, width: menuWidth)
         menu.addItem(item)
     }
+
+     @MainActor
+     private static func addDashboardItem(to menu: NSMenu, urlString: String, keyEquivalent: String = "") {
+         let item = NSMenuItem(title: "  Open Dashboard ↗", action: #selector(MenuActionHandler.openDashboard(_:)), keyEquivalent: keyEquivalent)
+         item.target = MenuActionHandler.shared
+         item.representedObject = urlString
+         
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 11),
+            .foregroundColor: NSColor.linkColor
+        ]
+         item.attributedTitle = NSAttributedString(string: "  Open Dashboard ↗", attributes: attrs)
+         
+         menu.addItem(item)
+     }
 }
 
 private final class ProviderGaugeView: NSView {
@@ -149,7 +267,14 @@ private final class ProviderGaugeView: NSView {
     private let color: NSColor
     private let sessionUsage: Double?
     private let weeklyUsage: Double?
+    private let sonnetUsage: Double?
+    private let sessionTrend: Double?
+    private let sessionResetDate: Date?
+    private let weeklyResetDate: Date?
+    private let sonnetResetDate: Date?
+    private let isSonnetOnly: Bool
     private let error: String?
+    private let hasError: Bool
 
     private let logoSize: CGFloat = 16
     private let pad: CGFloat = 14
@@ -157,19 +282,32 @@ private final class ProviderGaugeView: NSView {
     private let barRadius: CGFloat = 2.5
 
     init(name: String, logo: NSImage?, color: NSColor,
-         sessionUsage: Double?, weeklyUsage: Double?, error: String?, width: CGFloat) {
+         sessionUsage: Double?, weeklyUsage: Double?, sonnetUsage: Double?,
+         sessionTrend: Double?,
+         sessionResetDate: Date?, weeklyResetDate: Date?, sonnetResetDate: Date?,
+         isSonnetOnly: Bool,
+         error: String?,
+         hasError: Bool, width: CGFloat) {
         self.name = name
         self.logo = logo
         self.color = color
         self.sessionUsage = sessionUsage
         self.weeklyUsage = weeklyUsage
+        self.sonnetUsage = sonnetUsage
+        self.sessionTrend = sessionTrend
+        self.sessionResetDate = sessionResetDate
+        self.weeklyResetDate = weeklyResetDate
+        self.sonnetResetDate = sonnetResetDate
+        self.isSonnetOnly = isSonnetOnly
         self.error = error
+        self.hasError = hasError
 
         let hasSession = sessionUsage != nil
         let hasWeekly = weeklyUsage != nil
-        let rowCount = (hasSession ? 1 : 0) + (hasWeekly ? 1 : 0)
-        let height: CGFloat = error != nil ? 52 : (rowCount == 0 ? 36 : CGFloat(20 + rowCount * 16))
-        super.init(frame: NSRect(x: 0, y: 0, width: width, height: height))
+        let hasSonnet = sonnetUsage != nil
+        let rowCount = (hasSession ? 1 : 0) + (hasWeekly ? 1 : 0) + (hasSonnet ? 1 : 0)
+        let baseHeight: CGFloat = error != nil ? 52 : (rowCount == 0 ? 36 : CGFloat(20 + rowCount * 16))
+        super.init(frame: NSRect(x: 0, y: 0, width: width, height: baseHeight))
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -184,7 +322,44 @@ private final class ProviderGaugeView: NSView {
             .font: NSFont.systemFont(ofSize: 12, weight: .semibold),
             .foregroundColor: NSColor.labelColor
         ]
-        NSString(string: name).draw(at: NSPoint(x: pad + logoSize + 6, y: titleY), withAttributes: titleAttrs)
+        let nameX = pad + logoSize + 6
+        NSString(string: name).draw(at: NSPoint(x: nameX, y: titleY), withAttributes: titleAttrs)
+
+        let nameSize = NSString(string: name).size(withAttributes: titleAttrs)
+        let dotX = nameX + nameSize.width + 6
+        let dotY = titleY + (nameSize.height - 6) / 2
+        let dotRect = NSRect(x: dotX, y: dotY, width: 6, height: 6)
+        let hasUsageData = sessionUsage != nil || weeklyUsage != nil || sonnetUsage != nil
+        let dotColor: NSColor = hasError
+            ? NSColor.systemRed.withAlphaComponent(0.8)
+            : (hasUsageData
+                ? NSColor.systemGreen.withAlphaComponent(0.8)
+                : NSColor.systemGray.withAlphaComponent(0.5))
+        dotColor.setFill()
+        NSBezierPath(ovalIn: dotRect).fill()
+
+        if isSonnetOnly {
+            let badgeText = "Sonnet Only"
+            let badgeTextAttrs: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: 9, weight: .semibold),
+                .foregroundColor: NSColor.systemOrange
+            ]
+            let badgeTextSize = (badgeText as NSString).size(withAttributes: badgeTextAttrs)
+            let badgeHorizontalPad: CGFloat = 6
+            let badgeVerticalPad: CGFloat = 2
+            let badgeWidth = badgeTextSize.width + badgeHorizontalPad * 2
+            let badgeHeight = badgeTextSize.height + badgeVerticalPad * 2
+            let badgeX = bounds.width - pad - badgeWidth
+            let badgeY = titleY + (logoSize - badgeHeight) / 2
+
+            let badgeRect = NSRect(x: badgeX, y: badgeY, width: badgeWidth, height: badgeHeight)
+            NSColor.systemOrange.withAlphaComponent(0.15).setFill()
+            NSBezierPath(roundedRect: badgeRect, xRadius: badgeHeight / 2, yRadius: badgeHeight / 2).fill()
+
+            let textX = badgeX + (badgeWidth - badgeTextSize.width) / 2
+            let textY = badgeY + (badgeHeight - badgeTextSize.height) / 2
+            NSString(string: badgeText).draw(at: NSPoint(x: textX, y: textY), withAttributes: badgeTextAttrs)
+        }
 
         if let error {
             let errAttrs: [NSAttributedString.Key: Any] = [
@@ -213,12 +388,17 @@ private final class ProviderGaugeView: NSView {
 
         let labelWidth: CGFloat = 22
         let pctWidth: CGFloat = 36
+        let metaWidth: CGFloat = 54
         let barX = pad + labelWidth
-        let barMaxWidth = bounds.width - barX - pad - pctWidth - 4
+        let barMaxWidth = max(80, bounds.width - barX - pad - pctWidth - metaWidth)
 
         let pctAttrs: [NSAttributedString.Key: Any] = [
             .font: NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .semibold),
             .foregroundColor: NSColor.secondaryLabelColor
+        ]
+        let remainingAttrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 8, weight: .medium),
+            .foregroundColor: NSColor.tertiaryLabelColor
         ]
 
         var y = titleY - 18
@@ -233,7 +413,29 @@ private final class ProviderGaugeView: NSView {
             drawGaugeBar(at: NSPoint(x: barX, y: y + 1), width: barMaxWidth, height: barHeight,
                          percent: pct, color: color)
             let pctStr = String(format: "%2.0f%%", pct)
-            NSString(string: pctStr).draw(at: NSPoint(x: barX + barMaxWidth + 4, y: y - 1), withAttributes: pctAttrs)
+            let pctPoint = NSPoint(x: barX + barMaxWidth + 4, y: y - 1)
+            NSString(string: pctStr).draw(at: pctPoint, withAttributes: pctAttrs)
+            let pctTextWidth = (pctStr as NSString).size(withAttributes: pctAttrs).width
+            var trailingX = pctPoint.x + pctTextWidth
+
+            if let trendIndicator = trendIndicatorText(for: sessionTrend) {
+                let trendAttrs: [NSAttributedString.Key: Any] = [
+                    .font: NSFont.systemFont(ofSize: 8, weight: .bold),
+                    .foregroundColor: trendIndicator.color
+                ]
+                let trendPoint = NSPoint(x: pctPoint.x + pctTextWidth + 2, y: y)
+                NSString(string: trendIndicator.text).draw(at: trendPoint, withAttributes: trendAttrs)
+                let trendWidth = (trendIndicator.text as NSString).size(withAttributes: trendAttrs).width
+                trailingX = trendPoint.x + trendWidth
+            }
+
+            if let remaining = Self.formatRemainingTime(sessionResetDate) {
+                NSString(string: "· \(remaining)").draw(
+                    at: NSPoint(x: trailingX + 4, y: y),
+                    withAttributes: remainingAttrs
+                )
+            }
+
             y -= 16
         }
 
@@ -248,10 +450,41 @@ private final class ProviderGaugeView: NSView {
             drawGaugeBar(at: NSPoint(x: barX, y: y + 1), width: barMaxWidth, height: barHeight,
                          percent: pct, color: weeklyColor)
             let pctStr = String(format: "%2.0f%%", pct)
-            NSString(string: pctStr).draw(at: NSPoint(x: barX + barMaxWidth + 4, y: y - 1), withAttributes: pctAttrs)
+            let pctPoint = NSPoint(x: barX + barMaxWidth + 4, y: y - 1)
+            NSString(string: pctStr).draw(at: pctPoint, withAttributes: pctAttrs)
+            if let remaining = Self.formatRemainingTime(weeklyResetDate) {
+                let pctTextWidth = (pctStr as NSString).size(withAttributes: pctAttrs).width
+                NSString(string: "· \(remaining)").draw(
+                    at: NSPoint(x: pctPoint.x + pctTextWidth + 4, y: y),
+                    withAttributes: remainingAttrs
+                )
+            }
+            y -= 16
         }
 
-        if sessionUsage == nil && weeklyUsage == nil && error == nil {
+        if let sonnet = sonnetUsage {
+            let pct = normalizedPercent(sonnet)
+            let sonnetColor = NSColor.systemPurple
+            let sonnetLabelAttrs: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: 9, weight: .medium),
+                .foregroundColor: sonnetColor.withAlphaComponent(0.78)
+            ]
+            NSString(string: "sn").draw(at: NSPoint(x: pad, y: y - 1), withAttributes: sonnetLabelAttrs)
+            drawGaugeBar(at: NSPoint(x: barX, y: y + 1), width: barMaxWidth, height: barHeight,
+                         percent: pct, color: sonnetColor)
+            let pctStr = String(format: "%2.0f%%", pct)
+            let pctPoint = NSPoint(x: barX + barMaxWidth + 4, y: y - 1)
+            NSString(string: pctStr).draw(at: pctPoint, withAttributes: pctAttrs)
+            if let remaining = Self.formatRemainingTime(sonnetResetDate) {
+                let pctTextWidth = (pctStr as NSString).size(withAttributes: pctAttrs).width
+                NSString(string: "· \(remaining)").draw(
+                    at: NSPoint(x: pctPoint.x + pctTextWidth + 4, y: y),
+                    withAttributes: remainingAttrs
+                )
+            }
+        }
+
+        if !hasUsageData && error == nil {
             let noData: [NSAttributedString.Key: Any] = [
                 .font: NSFont.systemFont(ofSize: 11),
                 .foregroundColor: NSColor.tertiaryLabelColor
@@ -314,17 +547,60 @@ private final class ProviderGaugeView: NSView {
         let pct = value < 1 ? value * 100 : value
         return CGFloat(max(0, min(pct, 100)))
     }
+
+    private func trendIndicatorText(for trend: Double?) -> (text: String, color: NSColor)? {
+        guard let trend else {
+            return nil
+        }
+
+        if trend > 5 {
+            return (text: String(format: "↑ %.0f%%", abs(trend)), color: .systemRed)
+        }
+
+        if trend < -5 {
+            return (text: String(format: "↓ %.0f%%", abs(trend)), color: .systemGreen)
+        }
+
+        return nil
+    }
+
+    private static func formatRemainingTime(_ date: Date?) -> String? {
+        guard let date else { return nil }
+
+        let remaining = date.timeIntervalSinceNow
+        guard remaining > 0 else { return nil }
+
+        if remaining < 60 {
+            return "< 1m"
+        }
+
+        if remaining < 3_600 {
+            return "\(Int(remaining / 60))m"
+        }
+
+        if remaining < 86_400 {
+            let hours = Int(remaining / 3_600)
+            let minutes = Int(remaining.truncatingRemainder(dividingBy: 3_600) / 60)
+            return minutes > 0 ? "\(hours)h \(minutes)m" : "\(hours)h"
+        }
+
+        let days = Int(remaining / 86_400)
+        let hours = Int(remaining.truncatingRemainder(dividingBy: 86_400) / 3_600)
+        return hours > 0 ? "\(days)d \(hours)h" : "\(days)d"
+    }
 }
 
 private final class OpenRouterGaugeView: NSView {
     private let remainingCredits: Double?
     private let error: String?
+    private let hasError: Bool
     private let pad: CGFloat = 14
     private let logoSize: CGFloat = 16
 
-    init(remainingCredits: Double?, error: String?, width: CGFloat) {
+    init(remainingCredits: Double?, error: String?, hasError: Bool, width: CGFloat) {
         self.remainingCredits = remainingCredits
         self.error = error
+        self.hasError = hasError
         super.init(frame: NSRect(x: 0, y: 0, width: width, height: 32))
     }
 
@@ -345,7 +621,21 @@ private final class OpenRouterGaugeView: NSView {
             .font: NSFont.systemFont(ofSize: 12, weight: .semibold),
             .foregroundColor: NSColor.labelColor
         ]
-        NSString(string: "OpenRouter").draw(at: NSPoint(x: pad + logoSize + 6, y: titleY), withAttributes: titleAttrs)
+        let name = "OpenRouter"
+        let nameX = pad + logoSize + 6
+        NSString(string: name).draw(at: NSPoint(x: nameX, y: titleY), withAttributes: titleAttrs)
+
+        let nameSize = NSString(string: name).size(withAttributes: titleAttrs)
+        let dotX = nameX + nameSize.width + 6
+        let dotY = titleY + (nameSize.height - 6) / 2
+        let dotRect = NSRect(x: dotX, y: dotY, width: 6, height: 6)
+        let dotColor: NSColor = hasError
+            ? NSColor.systemRed.withAlphaComponent(0.8)
+            : (remainingCredits != nil
+                ? NSColor.systemGreen.withAlphaComponent(0.8)
+                : NSColor.systemGray.withAlphaComponent(0.5))
+        dotColor.setFill()
+        NSBezierPath(ovalIn: dotRect).fill()
 
         let valueX = bounds.width - pad - 80
 
@@ -389,22 +679,5 @@ private final class OpenRouterGaugeView: NSView {
         let textX = point.x + (size - sizeText.width) / 2
         let textY = point.y + (size - sizeText.height) / 2
         NSString(string: label).draw(at: NSPoint(x: textX, y: textY), withAttributes: attrs)
-    }
-}
-
-@MainActor
-private final class MenuActionHandler: NSObject {
-    static let shared = MenuActionHandler()
-
-    @objc func openSettings(_ sender: NSMenuItem) {
-        if let onSettings = sender.representedObject as? (() -> Void) {
-            onSettings()
-        }
-    }
-
-    @objc func handleRefresh(_ sender: NSMenuItem) {
-        if let onRefresh = sender.representedObject as? (() -> Void) {
-            onRefresh()
-        }
     }
 }

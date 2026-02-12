@@ -145,14 +145,30 @@ final class StatusItemController: ObservableObject {
     }
 
     private func buildCurrentMenu() -> NSMenu {
-        MenuBuilder.buildMenu(
+        var sessionTrends: [String: Double] = [:]
+        if let trend = usageStore.sessionTrend(for: "Claude Code") {
+            sessionTrends["Claude"] = trend
+        }
+        if let trend = usageStore.sessionTrend(for: "Codex") {
+            sessionTrends["Codex"] = trend
+        }
+        if let trend = usageStore.sessionTrend(for: "Copilot") {
+            sessionTrends["Copilot"] = trend
+        }
+        if let trend = usageStore.sessionTrend(for: "Gemini") {
+            sessionTrends["Gemini"] = trend
+        }
+
+        return MenuBuilder.buildMenu(
             claudeData: usageStore.claudeData,
             codexData: usageStore.codexData,
             copilotData: usageStore.copilotData,
             geminiData: usageStore.geminiData,
             openRouterData: usageStore.openRouterData,
+            sessionTrends: sessionTrends,
             isLoading: usageStore.isLoading,
             providerErrors: usageStore.providerErrors,
+            lastUpdated: usageStore.lastUpdatedTime,
             onRefresh: { [weak self] in
                 guard let self else { return }
                 Task { @MainActor in
@@ -260,7 +276,7 @@ final class StatusItemController: ObservableObject {
             let detailedIcon = IconRenderer.renderDetailedProvidersIcon(
                 barProviders: barProviders, openRouter: orData, isStale: isStale)
             statusItem?.button?.image = detailedIcon
-            statusItem?.length = detailedIcon.size.width + 10
+            statusItem?.length = detailedIcon.size.width + 4
             return
         }
 

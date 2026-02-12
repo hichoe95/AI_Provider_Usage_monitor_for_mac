@@ -23,6 +23,11 @@ final class UsageStore: ObservableObject {
     private var timer: Timer?
     private var refreshInterval: TimeInterval
     private var cancellables = Set<AnyCancellable>()
+    private var previousClaudeData: UsageData?
+    private var previousCodexData: UsageData?
+    private var previousCopilotData: UsageData?
+    private var previousGeminiData: UsageData?
+    private var previousOpenRouterData: UsageData?
     
     // MARK: - Initialization
     
@@ -93,20 +98,56 @@ final class UsageStore: ObservableObject {
         providerErrors = newErrors
         lastUpdatedTime = Date()
     }
+
+    func sessionTrend(for providerName: String) -> Double? {
+        func normalizedPercent(_ value: Double) -> Double {
+            value < 1 ? value * 100 : value
+        }
+
+        let currentAndPrevious: (current: UsageData?, previous: UsageData?)?
+        switch providerName {
+        case "Claude Code", "Claude":
+            currentAndPrevious = (claudeData, previousClaudeData)
+        case "Codex":
+            currentAndPrevious = (codexData, previousCodexData)
+        case "Copilot":
+            currentAndPrevious = (copilotData, previousCopilotData)
+        case "Gemini":
+            currentAndPrevious = (geminiData, previousGeminiData)
+        case "OpenRouter":
+            return nil
+        default:
+            currentAndPrevious = nil
+        }
+
+        guard
+            let current = currentAndPrevious?.current?.sessionUsage,
+            let previous = currentAndPrevious?.previous?.sessionUsage
+        else {
+            return nil
+        }
+
+        return normalizedPercent(current) - normalizedPercent(previous)
+    }
     
     // MARK: - Private Methods
     
     private func updateStore(with data: UsageData) {
         switch data.provider {
         case "Claude Code":
+            previousClaudeData = claudeData
             claudeData = data
         case "Codex":
+            previousCodexData = codexData
             codexData = data
         case "Copilot":
+            previousCopilotData = copilotData
             copilotData = data
         case "Gemini":
+            previousGeminiData = geminiData
             geminiData = data
         case "OpenRouter":
+            previousOpenRouterData = openRouterData
             openRouterData = data
         default:
             break

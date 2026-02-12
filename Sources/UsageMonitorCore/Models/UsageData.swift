@@ -14,6 +14,8 @@ public struct UsageData: Sendable {
     /// 주간 사용량 (0-100%)
     /// nil인 경우 프로바이더가 이 정보를 제공하지 않음
     public let weeklyUsage: Double?
+
+    public let sonnetUsage: Double?
     
     /// 남은 크레딧 또는 토큰 수
     /// nil인 경우 프로바이더가 이 정보를 제공하지 않음
@@ -22,6 +24,14 @@ public struct UsageData: Sendable {
     /// 사용량이 리셋되는 날짜
     /// nil인 경우 프로바이더가 이 정보를 제공하지 않음
     public let resetDate: Date?
+
+    public let sessionResetDate: Date?
+
+    public let weeklyResetDate: Date?
+
+    public let sonnetResetDate: Date?
+
+    public let isSonnetOnly: Bool?
     
     /// 사용량 정보를 마지막으로 업데이트한 시간
     public let lastUpdated: Date
@@ -38,15 +48,25 @@ public struct UsageData: Sendable {
         provider: String,
         sessionUsage: Double? = nil,
         weeklyUsage: Double? = nil,
+        sonnetUsage: Double? = nil,
         remainingCredits: Double? = nil,
         resetDate: Date? = nil,
+        sessionResetDate: Date? = nil,
+        weeklyResetDate: Date? = nil,
+        sonnetResetDate: Date? = nil,
+        isSonnetOnly: Bool? = nil,
         lastUpdated: Date = Date()
     ) {
         self.provider = provider
         self.sessionUsage = sessionUsage
         self.weeklyUsage = weeklyUsage
+        self.sonnetUsage = sonnetUsage
         self.remainingCredits = remainingCredits
         self.resetDate = resetDate
+        self.sessionResetDate = sessionResetDate
+        self.weeklyResetDate = weeklyResetDate
+        self.sonnetResetDate = sonnetResetDate
+        self.isSonnetOnly = isSonnetOnly
         self.lastUpdated = lastUpdated
     }
 }

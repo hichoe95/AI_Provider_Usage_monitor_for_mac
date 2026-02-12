@@ -132,13 +132,20 @@ public actor ClaudeProvider: Provider {
         }
 
         let response = try JSONDecoder().decode(ClaudeUsageResponse.self, from: data)
+        let isSonnetOnly = response.five_hour.utilization >= 80
+        let iso = ISO8601DateFormatter()
         
         return UsageData(
             provider: name,
             sessionUsage: response.five_hour.utilization,
             weeklyUsage: response.seven_day.utilization,
+            sonnetUsage: response.seven_day_sonnet?.utilization,
             remainingCredits: nil,
-            resetDate: ISO8601DateFormatter().date(from: response.five_hour.resets_at),
+            resetDate: iso.date(from: response.five_hour.resets_at),
+            sessionResetDate: iso.date(from: response.five_hour.resets_at),
+            weeklyResetDate: iso.date(from: response.seven_day.resets_at),
+            sonnetResetDate: response.seven_day_sonnet.flatMap { iso.date(from: $0.resets_at) },
+            isSonnetOnly: isSonnetOnly,
             lastUpdated: Date()
         )
     }
@@ -151,22 +158,6 @@ public actor ClaudeProvider: Provider {
                let result = ClaudeTokenExtractor.extract(from: data) {
                 return result
             }
-        }
-
-        let keychainAccounts = [primaryKeychainAccount, NSUserName()]
-
-        var nonInteractiveCandidates: [ClaudeOAuthResult] = []
-        for account in keychainAccounts {
-            if let result = extractFromKeychain(account: account, allowPrompt: false) {
-                nonInteractiveCandidates.append(result)
-            }
-        }
-        if let result = extractFromKeychainAny(allowPrompt: false) {
-            nonInteractiveCandidates.append(result)
-        }
-
-        if let best = bestOAuthCandidate(from: nonInteractiveCandidates) {
-            return best
         }
 
         guard !didAttemptInteractiveKeychainLookup else {
