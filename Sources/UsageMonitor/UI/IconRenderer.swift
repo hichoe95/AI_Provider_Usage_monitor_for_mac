@@ -21,6 +21,7 @@ enum StatusBarIcon {
     static var gemini: NSImage? { ProviderLogo.gemini }
 }
 
+@MainActor
 enum IconRenderer {
     static func renderProviderIcon(
         sessionUsage: Double?,
@@ -39,27 +40,35 @@ enum IconRenderer {
         let barHeight: CGFloat = 11
         let barGap: CGFloat = 1
         let barsOriginY = (size.height - (barHeight * 2 + barGap)) / 2
+        let fullBarWidth = size.width
+        let weeklyTrackRect = CGRect(x: 0, y: barsOriginY, width: fullBarWidth, height: barHeight)
+        let sessionTrackRect = CGRect(x: 0, y: barsOriginY + barHeight + barGap, width: fullBarWidth, height: barHeight)
+
+        context.setFillColor(gaugeTrackColor().cgColor)
+        fillRoundedRect(weeklyTrackRect, cornerRadius: barHeight / 2, in: context)
+        fillRoundedRect(sessionTrackRect, cornerRadius: barHeight / 2, in: context)
+        context.setStrokeColor(gaugeStrokeColor().cgColor)
+        strokeRoundedRect(weeklyTrackRect, cornerRadius: barHeight / 2, lineWidth: 0.6, in: context)
+        strokeRoundedRect(sessionTrackRect, cornerRadius: barHeight / 2, lineWidth: 0.6, in: context)
 
         if let session = sessionUsage {
             let normalized = normalizedPercent(session)
             let barWidth = size.width * normalized / 100.0
+            let fillRect = CGRect(x: 0, y: barsOriginY + barHeight + barGap, width: barWidth, height: barHeight)
             context.setFillColor(NSColor.systemBlue.cgColor)
-            fillRoundedRect(
-                CGRect(x: 0, y: barsOriginY + barHeight + barGap, width: barWidth, height: barHeight),
-                cornerRadius: min(barHeight / 2, barWidth / 2),
-                in: context
-            )
+            fillRoundedRect(fillRect, cornerRadius: min(barHeight / 2, barWidth / 2), in: context)
+            context.setStrokeColor(gaugeStrokeColor().cgColor)
+            strokeRoundedRect(fillRect, cornerRadius: min(barHeight / 2, barWidth / 2), lineWidth: 0.6, in: context)
         }
 
         if let weekly = weeklyUsage {
             let normalized = normalizedPercent(weekly)
             let barWidth = size.width * normalized / 100.0
+            let fillRect = CGRect(x: 0, y: barsOriginY, width: barWidth, height: barHeight)
             context.setFillColor(NSColor.systemGreen.cgColor)
-            fillRoundedRect(
-                CGRect(x: 0, y: barsOriginY, width: barWidth, height: barHeight),
-                cornerRadius: min(barHeight / 2, barWidth / 2),
-                in: context
-            )
+            fillRoundedRect(fillRect, cornerRadius: min(barHeight / 2, barWidth / 2), in: context)
+            context.setStrokeColor(gaugeStrokeColor().cgColor)
+            strokeRoundedRect(fillRect, cornerRadius: min(barHeight / 2, barWidth / 2), lineWidth: 0.6, in: context)
         }
 
         if isStale {
@@ -151,27 +160,31 @@ enum IconRenderer {
         let weeklyY = barsOriginY
         let sessionY = barsOriginY + barHeight + barGap
 
-        let trackColor = NSColor.tertiaryLabelColor.withAlphaComponent(0.2).cgColor
-        context.setFillColor(trackColor)
-        fillRoundedRect(
-            CGRect(x: barX, y: sessionY, width: barWidth, height: barHeight),
-            cornerRadius: barHeight / 2,
-            in: context
-        )
-        fillRoundedRect(
-            CGRect(x: barX, y: weeklyY, width: barWidth, height: barHeight),
-            cornerRadius: barHeight / 2,
-            in: context
-        )
+        let sessionTrackRect = CGRect(x: barX, y: sessionY, width: barWidth, height: barHeight)
+        let weeklyTrackRect = CGRect(x: barX, y: weeklyY, width: barWidth, height: barHeight)
+        context.setFillColor(gaugeTrackColor().cgColor)
+        fillRoundedRect(sessionTrackRect, cornerRadius: barHeight / 2, in: context)
+        fillRoundedRect(weeklyTrackRect, cornerRadius: barHeight / 2, in: context)
+        context.setStrokeColor(gaugeStrokeColor().cgColor)
+        strokeRoundedRect(sessionTrackRect, cornerRadius: barHeight / 2, lineWidth: 0.6, in: context)
+        strokeRoundedRect(weeklyTrackRect, cornerRadius: barHeight / 2, lineWidth: 0.6, in: context)
 
         if let session = provider.session {
             let pct = normalizedPercent(session)
             let fillWidth = max(0, barWidth * pct / 100)
             if fillWidth > 0 {
+                let fillRect = CGRect(x: barX, y: sessionY, width: fillWidth, height: barHeight)
                 context.setFillColor(provider.brandColor.cgColor)
                 fillRoundedRect(
-                    CGRect(x: barX, y: sessionY, width: fillWidth, height: barHeight),
+                    fillRect,
                     cornerRadius: min(barHeight / 2, fillWidth / 2),
+                    in: context
+                )
+                context.setStrokeColor(gaugeStrokeColor().cgColor)
+                strokeRoundedRect(
+                    fillRect,
+                    cornerRadius: min(barHeight / 2, fillWidth / 2),
+                    lineWidth: 0.5,
                     in: context
                 )
             }
@@ -182,10 +195,18 @@ enum IconRenderer {
             let weeklyColor = provider.brandColor.withAlphaComponent(0.6)
             let fillWidth = max(0, barWidth * pct / 100)
             if fillWidth > 0 {
+                let fillRect = CGRect(x: barX, y: weeklyY, width: fillWidth, height: barHeight)
                 context.setFillColor(weeklyColor.cgColor)
                 fillRoundedRect(
-                    CGRect(x: barX, y: weeklyY, width: fillWidth, height: barHeight),
+                    fillRect,
                     cornerRadius: min(barHeight / 2, fillWidth / 2),
+                    in: context
+                )
+                context.setStrokeColor(gaugeStrokeColor().cgColor)
+                strokeRoundedRect(
+                    fillRect,
+                    cornerRadius: min(barHeight / 2, fillWidth / 2),
+                    lineWidth: 0.5,
                     in: context
                 )
             }
@@ -273,6 +294,22 @@ enum IconRenderer {
         return CGFloat(max(0, min(pct, 100)))
     }
 
+    private static var isDarkAppearance: Bool {
+        NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+    }
+
+    private static func gaugeTrackColor() -> NSColor {
+        isDarkAppearance
+            ? NSColor.white.withAlphaComponent(0.24)
+            : NSColor.black.withAlphaComponent(0.13)
+    }
+
+    private static func gaugeStrokeColor() -> NSColor {
+        isDarkAppearance
+            ? NSColor.white.withAlphaComponent(0.30)
+            : NSColor.black.withAlphaComponent(0.18)
+    }
+
     private static func fillRoundedRect(
         _ rect: CGRect,
         cornerRadius: CGFloat,
@@ -290,5 +327,26 @@ enum IconRenderer {
         )
         context.addPath(path)
         context.fillPath()
+    }
+
+    private static func strokeRoundedRect(
+        _ rect: CGRect,
+        cornerRadius: CGFloat,
+        lineWidth: CGFloat,
+        in context: CGContext
+    ) {
+        guard rect.width > 0, rect.height > 0 else {
+            return
+        }
+
+        let path = CGPath(
+            roundedRect: rect,
+            cornerWidth: max(0, cornerRadius),
+            cornerHeight: max(0, cornerRadius),
+            transform: nil
+        )
+        context.setLineWidth(lineWidth)
+        context.addPath(path)
+        context.strokePath()
     }
 }
