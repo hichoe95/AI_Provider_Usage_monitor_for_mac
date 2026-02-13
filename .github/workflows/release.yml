@@ -31,8 +31,8 @@ jobs:
           VERSION="${TAG#v}"
           echo "TAG=$TAG" >> "$GITHUB_ENV"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "ZIP_NAME=UsageMonitor-${TAG}-macOS.zip" >> "$GITHUB_ENV"
-          echo "DMG_NAME=UsageMonitor-${TAG}-macOS.dmg" >> "$GITHUB_ENV"
+          echo "ZIP_NAME=AIUsageMonitor-${TAG}-macOS.zip" >> "$GITHUB_ENV"
+          echo "DMG_NAME=AIUsageMonitor-${TAG}-macOS.dmg" >> "$GITHUB_ENV"
           echo "CHECKSUM_NAME=checksums-${TAG}.txt" >> "$GITHUB_ENV"
       
       - name: Build app bundle
@@ -42,8 +42,8 @@ jobs:
       
       - name: Create release archives
         run: |
-          ditto -c -k --sequesterRsrc --keepParent UsageMonitor.app "${ZIP_NAME}"
-          hdiutil create -volname "UsageMonitor" -srcfolder "UsageMonitor.app" -ov -format UDZO "${DMG_NAME}"
+          ditto -c -k --sequesterRsrc --keepParent AIUsageMonitor.app "${ZIP_NAME}"
+          hdiutil create -volname "AIUsageMonitor" -srcfolder "AIUsageMonitor.app" -ov -format UDZO "${DMG_NAME}"
           shasum -a 256 "${ZIP_NAME}" "${DMG_NAME}" > "${CHECKSUM_NAME}"
       
       - name: Create Release
@@ -55,11 +55,11 @@ jobs:
             ${{ env.CHECKSUM_NAME }}
           generate_release_notes: true
           body: |
-            ## UsageMonitor ${{ github.ref_name }}
+            ## AIUsageMonitor ${{ github.ref_name }}
             
             ### Installation
             1. Download `${{ env.DMG_NAME }}` or `${{ env.ZIP_NAME }}`
-            2. Move `UsageMonitor.app` to your Applications folder
+            2. Move `AIUsageMonitor.app` to your Applications folder
             3. Right-click and select "Open" for first launch
             4. If a Keychain access prompt appears, select `Always Allow`
             
@@ -79,7 +79,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: UsageMonitor-${{ github.ref_name }}
+          name: AIUsageMonitor-${{ github.ref_name }}
           path: |
             ${{ env.ZIP_NAME }}
             ${{ env.DMG_NAME }}

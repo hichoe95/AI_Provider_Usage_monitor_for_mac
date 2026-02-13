@@ -1,50 +1,42 @@
 # Changelog
 
-All notable changes to UsageMonitor will be documented in this file.
+All notable changes to AIUsageMonitor will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [1.0.2] - 2026-02-13
+
+### Changed
+- Unified app branding to `AIUsageMonitor` across product, bundle, scripts, and UI labels.
+- Updated release packaging metadata and installer flow to match `AIUsageMonitor.app`.
+- Improved build reliability by preferring Xcode toolchain when CLT is active and setting module cache overrides in packaging.
+- Stabilized startup cache handling to reduce launch-time cache database errors.
+- Increased app icon scale and regenerated `.icns` assets.
+- Rounded status bar gauge corners for improved visual consistency.
+- Refined README (KR/EN) setup and troubleshooting guides.
+
+### Fixed
+- Fixed executable/app bundle naming mismatch in packaging and install scripts.
+- Hardened Codex usage parsing for split 5h/7d windows and false 100% readings.
+
+## [1.0.1] - 2026-02-11
+
+### Changed
+- Introduced release packaging workflow and DMG/ZIP artifacts for tagged builds.
+- Improved Swift 6 compatibility and actor-isolation handling.
+
 ## [1.0.0] - 2026-02-10
 
 ### Added
-- Initial release of UsageMonitor
-- **Claude Code Provider**: OAuth authentication with Keychain and file fallback support
-- **Codex Provider**: OAuth authentication via `~/.codex/auth.json`
-- **OpenRouter Provider**: REST API integration with Keychain-stored API keys
-- **Menu Bar UI**: Native macOS menu bar app with LSUIElement (no Dock icon)
-- **Usage Visualization**: Color-coded bars showing session (blue) and weekly (green) usage
-- **Settings Window**: SwiftUI-based settings with provider toggles and refresh interval configuration
-- **Automatic Polling**: Configurable refresh intervals (1, 5, or 15 minutes)
-- **Secure Storage**: OAuth tokens and API keys stored in macOS Keychain
-- **Stale Data Indicator**: Dimmed icon appearance when data is older than 10 minutes
-- **Build Scripts**: Automated packaging and code signing scripts
-- **Swift 6 Concurrency**: Full Swift 6 strict concurrency compliance with @MainActor and Sendable
+- Initial release of UsageMonitor.
+- Claude Code, Codex, and OpenRouter providers.
+- Native macOS menu bar UI with SwiftUI settings.
+- Usage bars, polling, and secure keychain-backed credentials.
 
-### Technical Details
-- Built with Swift 6.0 and SwiftUI
-- Minimum macOS version: 14.0 (Sonoma)
-- Swift Package Manager for dependency management
-- Ad-hoc code signing for development distribution
-- Native AppKit integration for menu bar functionality
-
-### Known Limitations
-- macOS 14+ required (Swift 6 and modern SwiftUI features)
-- Keychain access prompts on first launch
-- Gatekeeper warning for unsigned apps (right-click → Open required)
-- Codex JSON-RPC not implemented (OAuth only in V1)
-
-## [Unreleased]
-
-### Planned for V2.0
-- WidgetKit extension for home screen widgets
-- Sparkle framework for automatic updates
-- Codex JSON-RPC support for enhanced functionality
-- Additional providers (Cursor, GitHub Copilot)
-- PTY fallback for CLI-based providers
-- Homebrew formula for easier installation
-- App notarization for seamless distribution
-
----
-
-[1.0.0]: https://github.com/yourusername/usage_monitor/releases/tag/v1.0.0
+[Unreleased]: https://github.com/hichoe95/AI_Provider_Usage_monitor_for_mac/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/hichoe95/AI_Provider_Usage_monitor_for_mac/releases/tag/v1.0.2
+[1.0.1]: https://github.com/hichoe95/AI_Provider_Usage_monitor_for_mac/releases/tag/v1.0.1
+[1.0.0]: https://github.com/hichoe95/AI_Provider_Usage_monitor_for_mac/releases/tag/v1.0.0
