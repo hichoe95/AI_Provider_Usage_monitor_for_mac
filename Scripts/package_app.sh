@@ -7,7 +7,28 @@ BUILD_DIR=".build/release"
 APP_BUNDLE="${APP_NAME}.app"
 ICON_FILE="Assets/UsageMonitor.icns"
 
+setup_build_env() {
+    local tmp_root="${TMPDIR:-/tmp}"
+    tmp_root="${tmp_root%/}"
+
+    # Avoid permission issues in restricted environments by keeping module caches in tmp.
+    export CLANG_MODULE_CACHE_PATH="${CLANG_MODULE_CACHE_PATH:-${tmp_root}/clang-module-cache}"
+    export SWIFTPM_MODULECACHE_OVERRIDE="${SWIFTPM_MODULECACHE_OVERRIDE:-${tmp_root}/swiftpm-module-cache}"
+    mkdir -p "${CLANG_MODULE_CACHE_PATH}" "${SWIFTPM_MODULECACHE_OVERRIDE}"
+
+    # Prefer full Xcode toolchain when CLT is selected to reduce SDK/toolchain mismatch issues.
+    if [ -z "${DEVELOPER_DIR:-}" ] && [ -d "/Applications/Xcode.app/Contents/Developer" ]; then
+        local active_dev_dir
+        active_dev_dir="$(/usr/bin/xcode-select -p 2>/dev/null || true)"
+        if [ "${active_dev_dir}" = "/Library/Developer/CommandLineTools" ]; then
+            export DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
+            echo "Using Xcode toolchain: ${DEVELOPER_DIR}"
+        fi
+    fi
+}
+
 echo "Building..."
+setup_build_env
 swift build -c release
 
 echo "Creating app bundle..."

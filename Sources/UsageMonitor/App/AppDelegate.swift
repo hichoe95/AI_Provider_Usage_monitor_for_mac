@@ -43,13 +43,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        let cacheTargets = [
-            cachesRoot.appendingPathComponent(bundleID),
-            cachesRoot.appendingPathComponent("UsageMonitor"),
-        ]
+        // Keep the current bundle cache directory intact for URLSession/URLCache internals.
+        // We only clear legacy cache paths from older app names.
+        let legacyCache = cachesRoot.appendingPathComponent("UsageMonitor")
+        if fm.fileExists(atPath: legacyCache.path) {
+            try? fm.removeItem(at: legacyCache)
+        }
 
-        for target in cacheTargets where fm.fileExists(atPath: target.path) {
-            try? fm.removeItem(at: target)
+        let bundleCache = cachesRoot.appendingPathComponent(bundleID, isDirectory: true)
+        if !fm.fileExists(atPath: bundleCache.path) {
+            try? fm.createDirectory(at: bundleCache, withIntermediateDirectories: true)
         }
     }
 }
