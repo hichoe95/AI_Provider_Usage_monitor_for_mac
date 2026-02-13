@@ -34,6 +34,7 @@ cd AI_Provider_Usage_monitor_for_mac
 - release build -> app install -> launch
 - step-by-step spinner/animated progress output
 - install log file: `${TMPDIR:-/tmp}/usagemonitor-install.log`
+- install target: `/Applications` (falls back to `~/Applications` without permission)
 
 ### 2) First Setup
 
@@ -99,6 +100,7 @@ rm -rf /Applications/AIUsageMonitor.app
 rm -rf ~/Applications/AIUsageMonitor.app
 defaults delete com.choihwanil.usagemonitor 2>/dev/null || true
 rm -rf ~/Library/Application\ Support/UsageMonitor
+rm -rf ~/Library/Caches/com.choihwanil.usagemonitor ~/Library/Caches/UsageMonitor
 ```
 
 </details>
@@ -133,6 +135,30 @@ xcode-select --install
 - check log: `cat ${TMPDIR:-/tmp}/usagemonitor-install.log`
 - inspect the last error lines first
 - if it keeps failing, attach full log in an issue
+
+### 6) Swift/SDK version mismatch
+
+```bash
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+sudo xcodebuild -runFirstLaunch
+```
+
+- Typical error: `SDK is built with ... while this compiler is ...`
+- Re-run `./install.sh` after the commands above
+
+### 7) App does not launch or install path is mixed
+
+```bash
+rm -rf /Applications/AIUsageMonitor.app ~/Applications/AIUsageMonitor.app
+./install.sh
+```
+
+- Keep only one install location to avoid path confusion
+
+### 8) App icon does not refresh immediately
+
+- Quit the app and reinstall
+- Finder/Dock icon cache delay can temporarily show the previous icon
 
 ## Requirements
 
@@ -172,9 +198,13 @@ Local source build/install is the most reliable path for now.
 
 - Unified app branding to `AIUsageMonitor` (product/bundle/scripts/UI strings)
 - Fixed packaging/installer mismatch between executable name and app bundle name
+- Added automatic Xcode toolchain selection + module cache path override in packaging script
+- Stabilized startup cache-directory handling (reduces launch/network cache errors)
 - Improved Codex dropdown to keep 5h and 7d remaining-time displays independent
 - Added Codex parser support for `rate_limit.primary_window`/`secondary_window` + `reset_at`/`reset_after_seconds`
 - Added guard logic to prevent false-positive Codex usage parsing (100% lock issue)
+- Increased app icon scale and regenerated `.icns` assets
+- Rounded status bar gauge corners
 - Synced KR/EN README updates and increased top icon size to 256x256
 
 <details>

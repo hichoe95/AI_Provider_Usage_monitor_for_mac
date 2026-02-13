@@ -34,6 +34,7 @@ cd AI_Provider_Usage_monitor_for_mac
 - release 빌드 -> 앱 설치 -> 실행
 - 단계별 스피너/애니메이션 진행 로그
 - 설치 로그 파일: `${TMPDIR:-/tmp}/usagemonitor-install.log`
+- 설치 경로: `/Applications` (권한 없으면 `~/Applications`)
 
 ### 2) 첫 실행 세팅
 
@@ -99,6 +100,7 @@ rm -rf /Applications/AIUsageMonitor.app
 rm -rf ~/Applications/AIUsageMonitor.app
 defaults delete com.choihwanil.usagemonitor 2>/dev/null || true
 rm -rf ~/Library/Application\ Support/UsageMonitor
+rm -rf ~/Library/Caches/com.choihwanil.usagemonitor ~/Library/Caches/UsageMonitor
 ```
 
 </details>
@@ -132,6 +134,30 @@ xcode-select --install
 - 로그 확인: `cat ${TMPDIR:-/tmp}/usagemonitor-install.log`
 - 마지막 에러 줄부터 원인 확인
 - 반복되면 로그 전체를 이슈에 첨부
+
+### 6) Swift/SDK 버전 불일치 오류가 날 때
+
+```bash
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+sudo xcodebuild -runFirstLaunch
+```
+
+- 에러 예시: `SDK is built with ... while this compiler is ...`
+- 위 설정 후 `./install.sh` 재실행
+
+### 7) 실행이 안 되거나 설치 경로가 꼬였을 때
+
+```bash
+rm -rf /Applications/AIUsageMonitor.app ~/Applications/AIUsageMonitor.app
+./install.sh
+```
+
+- 앱을 한 경로에만 설치해 중복 설치 혼선을 제거
+
+### 8) 아이콘이 바로 안 바뀔 때
+
+- 앱 종료 후 재설치
+- Finder/Dock 아이콘 캐시 지연 때문에 잠깐 이전 아이콘이 보일 수 있음
 
 ## Requirements
 
@@ -171,9 +197,13 @@ GOOGLE_GENERATIVE_AI_API_KEY=... python3 Scripts/generate_icon_with_gemini.py --
 
 - 앱 이름을 `AIUsageMonitor`로 통합 (product/bundle/script/UI 문자열 정리)
 - 패키징/설치 스크립트에서 실행 파일명과 앱 번들명 불일치 문제 수정
+- 패키징 스크립트에서 Xcode toolchain 자동 선택 + module cache 경로 보정
+- 앱 시작 시 캐시 폴더 처리 안정화 (실행/네트워크 캐시 오류 완화)
 - Codex 드롭다운 5h/7d 남은 시간 분리 표시 로직 보강
 - Codex 파서에 `rate_limit.primary_window`/`secondary_window` + `reset_at`/`reset_after_seconds` 지원 추가
 - Codex 사용량 파싱 오탐(100% 고정) 방지 로직 추가
+- 앱 아이콘 비율 확대 및 `.icns` 재생성
+- status bar 게이지 바 모서리 둥글게 렌더링
 - README KR/EN 동기화 및 상단 아이콘 크기(256x256) 조정
 
 <details>
