@@ -44,14 +44,22 @@ enum IconRenderer {
             let normalized = normalizedPercent(session)
             let barWidth = size.width * normalized / 100.0
             context.setFillColor(NSColor.systemBlue.cgColor)
-            context.fill(CGRect(x: 0, y: barsOriginY + barHeight + barGap, width: barWidth, height: barHeight))
+            fillRoundedRect(
+                CGRect(x: 0, y: barsOriginY + barHeight + barGap, width: barWidth, height: barHeight),
+                cornerRadius: min(barHeight / 2, barWidth / 2),
+                in: context
+            )
         }
 
         if let weekly = weeklyUsage {
             let normalized = normalizedPercent(weekly)
             let barWidth = size.width * normalized / 100.0
             context.setFillColor(NSColor.systemGreen.cgColor)
-            context.fill(CGRect(x: 0, y: barsOriginY, width: barWidth, height: barHeight))
+            fillRoundedRect(
+                CGRect(x: 0, y: barsOriginY, width: barWidth, height: barHeight),
+                cornerRadius: min(barHeight / 2, barWidth / 2),
+                in: context
+            )
         }
 
         if isStale {
@@ -145,15 +153,27 @@ enum IconRenderer {
 
         let trackColor = NSColor.tertiaryLabelColor.withAlphaComponent(0.2).cgColor
         context.setFillColor(trackColor)
-        context.fill(CGRect(x: barX, y: sessionY, width: barWidth, height: barHeight))
-        context.fill(CGRect(x: barX, y: weeklyY, width: barWidth, height: barHeight))
+        fillRoundedRect(
+            CGRect(x: barX, y: sessionY, width: barWidth, height: barHeight),
+            cornerRadius: barHeight / 2,
+            in: context
+        )
+        fillRoundedRect(
+            CGRect(x: barX, y: weeklyY, width: barWidth, height: barHeight),
+            cornerRadius: barHeight / 2,
+            in: context
+        )
 
         if let session = provider.session {
             let pct = normalizedPercent(session)
             let fillWidth = max(0, barWidth * pct / 100)
             if fillWidth > 0 {
                 context.setFillColor(provider.brandColor.cgColor)
-                context.fill(CGRect(x: barX, y: sessionY, width: fillWidth, height: barHeight))
+                fillRoundedRect(
+                    CGRect(x: barX, y: sessionY, width: fillWidth, height: barHeight),
+                    cornerRadius: min(barHeight / 2, fillWidth / 2),
+                    in: context
+                )
             }
         }
 
@@ -163,18 +183,30 @@ enum IconRenderer {
             let fillWidth = max(0, barWidth * pct / 100)
             if fillWidth > 0 {
                 context.setFillColor(weeklyColor.cgColor)
-                context.fill(CGRect(x: barX, y: weeklyY, width: fillWidth, height: barHeight))
+                fillRoundedRect(
+                    CGRect(x: barX, y: weeklyY, width: fillWidth, height: barHeight),
+                    cornerRadius: min(barHeight / 2, fillWidth / 2),
+                    in: context
+                )
             }
         }
 
         if provider.session == nil {
             context.setFillColor(NSColor.tertiaryLabelColor.withAlphaComponent(0.4).cgColor)
-            context.fill(CGRect(x: barX, y: sessionY, width: 2.2, height: barHeight))
+            fillRoundedRect(
+                CGRect(x: barX, y: sessionY, width: 2.2, height: barHeight),
+                cornerRadius: 1.1,
+                in: context
+            )
         }
 
         if provider.weekly == nil {
             context.setFillColor(NSColor.tertiaryLabelColor.withAlphaComponent(0.35).cgColor)
-            context.fill(CGRect(x: barX, y: weeklyY, width: 2.2, height: barHeight))
+            fillRoundedRect(
+                CGRect(x: barX, y: weeklyY, width: 2.2, height: barHeight),
+                cornerRadius: 1.1,
+                in: context
+            )
         }
     }
 
@@ -239,5 +271,24 @@ enum IconRenderer {
     private static func normalizedPercent(_ value: Double) -> CGFloat {
         let pct = value < 1 ? value * 100 : value
         return CGFloat(max(0, min(pct, 100)))
+    }
+
+    private static func fillRoundedRect(
+        _ rect: CGRect,
+        cornerRadius: CGFloat,
+        in context: CGContext
+    ) {
+        guard rect.width > 0, rect.height > 0 else {
+            return
+        }
+
+        let path = CGPath(
+            roundedRect: rect,
+            cornerWidth: max(0, cornerRadius),
+            cornerHeight: max(0, cornerRadius),
+            transform: nil
+        )
+        context.addPath(path)
+        context.fillPath()
     }
 }
