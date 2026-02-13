@@ -227,10 +227,14 @@ enum MenuBuilder {
                                       sessionUsage: data?.sessionUsage,
                                       weeklyUsage: data?.weeklyUsage,
                                       sonnetUsage: data?.sonnetUsage,
+                                      sparkUsage: data?.sparkUsage,
+                                      sparkWeeklyUsage: data?.sparkWeeklyUsage,
                                       sessionTrend: sessionTrend,
                                       sessionResetDate: data?.sessionResetDate ?? data?.resetDate,
                                       weeklyResetDate: data?.weeklyResetDate ?? data?.resetDate,
                                       sonnetResetDate: data?.sonnetResetDate ?? data?.weeklyResetDate ?? data?.resetDate,
+                                      sparkResetDate: data?.sparkResetDate ?? data?.weeklyResetDate ?? data?.resetDate,
+                                      sparkWeeklyResetDate: data?.sparkWeeklyResetDate ?? data?.weeklyResetDate ?? data?.resetDate,
                                       isSonnetOnly: data?.isSonnetOnly ?? false,
                                       error: error,
                                       hasError: error != nil, width: menuWidth)
@@ -268,10 +272,14 @@ private final class ProviderGaugeView: NSView {
     private let sessionUsage: Double?
     private let weeklyUsage: Double?
     private let sonnetUsage: Double?
+    private let sparkUsage: Double?
+    private let sparkWeeklyUsage: Double?
     private let sessionTrend: Double?
     private let sessionResetDate: Date?
     private let weeklyResetDate: Date?
     private let sonnetResetDate: Date?
+    private let sparkResetDate: Date?
+    private let sparkWeeklyResetDate: Date?
     private let isSonnetOnly: Bool
     private let error: String?
     private let hasError: Bool
@@ -282,9 +290,9 @@ private final class ProviderGaugeView: NSView {
     private let barRadius: CGFloat = 2.5
 
     init(name: String, logo: NSImage?, color: NSColor,
-         sessionUsage: Double?, weeklyUsage: Double?, sonnetUsage: Double?,
+         sessionUsage: Double?, weeklyUsage: Double?, sonnetUsage: Double?, sparkUsage: Double?, sparkWeeklyUsage: Double?,
          sessionTrend: Double?,
-         sessionResetDate: Date?, weeklyResetDate: Date?, sonnetResetDate: Date?,
+         sessionResetDate: Date?, weeklyResetDate: Date?, sonnetResetDate: Date?, sparkResetDate: Date?, sparkWeeklyResetDate: Date?,
          isSonnetOnly: Bool,
          error: String?,
          hasError: Bool, width: CGFloat) {
@@ -294,10 +302,14 @@ private final class ProviderGaugeView: NSView {
         self.sessionUsage = sessionUsage
         self.weeklyUsage = weeklyUsage
         self.sonnetUsage = sonnetUsage
+        self.sparkUsage = sparkUsage
+        self.sparkWeeklyUsage = sparkWeeklyUsage
         self.sessionTrend = sessionTrend
         self.sessionResetDate = sessionResetDate
         self.weeklyResetDate = weeklyResetDate
         self.sonnetResetDate = sonnetResetDate
+        self.sparkResetDate = sparkResetDate
+        self.sparkWeeklyResetDate = sparkWeeklyResetDate
         self.isSonnetOnly = isSonnetOnly
         self.error = error
         self.hasError = hasError
@@ -305,7 +317,9 @@ private final class ProviderGaugeView: NSView {
         let hasSession = sessionUsage != nil
         let hasWeekly = weeklyUsage != nil
         let hasSonnet = sonnetUsage != nil
-        let rowCount = (hasSession ? 1 : 0) + (hasWeekly ? 1 : 0) + (hasSonnet ? 1 : 0)
+        let hasSpark = sparkUsage != nil
+        let hasSparkWeekly = sparkWeeklyUsage != nil
+        let rowCount = (hasSession ? 1 : 0) + (hasWeekly ? 1 : 0) + (hasSonnet ? 1 : 0) + (hasSpark ? 1 : 0) + (hasSparkWeekly ? 1 : 0)
         let baseHeight: CGFloat = error != nil ? 52 : (rowCount == 0 ? 36 : CGFloat(20 + rowCount * 16))
         super.init(frame: NSRect(x: 0, y: 0, width: width, height: baseHeight))
     }
@@ -329,7 +343,7 @@ private final class ProviderGaugeView: NSView {
         let dotX = nameX + nameSize.width + 6
         let dotY = titleY + (nameSize.height - 6) / 2
         let dotRect = NSRect(x: dotX, y: dotY, width: 6, height: 6)
-        let hasUsageData = sessionUsage != nil || weeklyUsage != nil || sonnetUsage != nil
+        let hasUsageData = sessionUsage != nil || weeklyUsage != nil || sonnetUsage != nil || sparkUsage != nil || sparkWeeklyUsage != nil
         let dotColor: NSColor = hasError
             ? NSColor.systemRed.withAlphaComponent(0.8)
             : (hasUsageData
@@ -453,6 +467,52 @@ private final class ProviderGaugeView: NSView {
             let pctPoint = NSPoint(x: barX + barMaxWidth + 4, y: y - 1)
             NSString(string: pctStr).draw(at: pctPoint, withAttributes: pctAttrs)
             if let remaining = Self.formatRemainingTime(sonnetResetDate) {
+                let pctTextWidth = (pctStr as NSString).size(withAttributes: pctAttrs).width
+                NSString(string: "· \(remaining)").draw(
+                    at: NSPoint(x: pctPoint.x + pctTextWidth + 4, y: y),
+                    withAttributes: remainingAttrs
+                )
+            }
+            y -= 16
+        }
+
+        if let spark = sparkUsage {
+            let pct = normalizedPercent(spark)
+            let sparkColor = NSColor.systemTeal
+            let sparkLabelAttrs: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: 9, weight: .medium),
+                .foregroundColor: sparkColor.withAlphaComponent(0.78)
+            ]
+            NSString(string: "sp5").draw(at: NSPoint(x: pad, y: y - 1), withAttributes: sparkLabelAttrs)
+            drawGaugeBar(at: NSPoint(x: barX, y: y + 1), width: barMaxWidth, height: barHeight,
+                         percent: pct, color: sparkColor)
+            let pctStr = String(format: "%2.0f%%", pct)
+            let pctPoint = NSPoint(x: barX + barMaxWidth + 4, y: y - 1)
+            NSString(string: pctStr).draw(at: pctPoint, withAttributes: pctAttrs)
+            if let remaining = Self.formatRemainingTime(sparkResetDate) {
+                let pctTextWidth = (pctStr as NSString).size(withAttributes: pctAttrs).width
+                NSString(string: "· \(remaining)").draw(
+                    at: NSPoint(x: pctPoint.x + pctTextWidth + 4, y: y),
+                    withAttributes: remainingAttrs
+                )
+            }
+            y -= 16
+        }
+
+        if let sparkWeekly = sparkWeeklyUsage {
+            let pct = normalizedPercent(sparkWeekly)
+            let sparkColor = desaturatedTint(NSColor.systemTeal)
+            let sparkLabelAttrs: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: 9, weight: .medium),
+                .foregroundColor: sparkColor.withAlphaComponent(0.78)
+            ]
+            NSString(string: "sp7").draw(at: NSPoint(x: pad, y: y - 1), withAttributes: sparkLabelAttrs)
+            drawGaugeBar(at: NSPoint(x: barX, y: y + 1), width: barMaxWidth, height: barHeight,
+                         percent: pct, color: sparkColor)
+            let pctStr = String(format: "%2.0f%%", pct)
+            let pctPoint = NSPoint(x: barX + barMaxWidth + 4, y: y - 1)
+            NSString(string: pctStr).draw(at: pctPoint, withAttributes: pctAttrs)
+            if let remaining = Self.formatRemainingTime(sparkWeeklyResetDate) {
                 let pctTextWidth = (pctStr as NSString).size(withAttributes: pctAttrs).width
                 NSString(string: "· \(remaining)").draw(
                     at: NSPoint(x: pctPoint.x + pctTextWidth + 4, y: y),

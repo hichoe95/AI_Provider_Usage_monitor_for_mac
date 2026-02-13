@@ -43,11 +43,19 @@ public struct CodexProvider: Provider {
     private struct CodexUsageSnapshot: Sendable {
         let sessionUsage: Double?
         let weeklyUsage: Double?
+        let sparkUsage: Double?
+        let sparkWeeklyUsage: Double?
         let sessionResetDate: Date?
         let weeklyResetDate: Date?
+        let sparkResetDate: Date?
+        let sparkWeeklyResetDate: Date?
 
         var resetDate: Date? {
             sessionResetDate ?? weeklyResetDate
+        }
+
+        var hasAnyUsage: Bool {
+            sessionUsage != nil || weeklyUsage != nil || sparkUsage != nil || sparkWeeklyUsage != nil
         }
     }
 
@@ -160,10 +168,14 @@ public struct CodexProvider: Provider {
                     provider: name,
                     sessionUsage: parsed.sessionUsage,
                     weeklyUsage: parsed.weeklyUsage,
+                    sparkUsage: parsed.sparkUsage,
+                    sparkWeeklyUsage: parsed.sparkWeeklyUsage,
                     remainingCredits: nil,
                     resetDate: parsed.resetDate,
                     sessionResetDate: parsed.sessionResetDate,
                     weeklyResetDate: parsed.weeklyResetDate,
+                    sparkResetDate: parsed.sparkResetDate,
+                    sparkWeeklyResetDate: parsed.sparkWeeklyResetDate,
                     lastUpdated: Date()
                 )
             case 401, 403:
@@ -195,7 +207,7 @@ public struct CodexProvider: Provider {
     
     private func parseUsageResponse(_ data: Data) -> CodexUsageSnapshot? {
         if let root = try? JSONSerialization.jsonObject(with: data) {
-            if let parsed = parseUsageFromFlexibleJSON(root), parsed.sessionUsage != nil || parsed.weeklyUsage != nil {
+            if let parsed = parseUsageFromFlexibleJSON(root), parsed.hasAnyUsage {
                 return parsed
             }
         }
@@ -219,8 +231,12 @@ public struct CodexProvider: Provider {
             return CodexUsageSnapshot(
                 sessionUsage: nil,
                 weeklyUsage: weekly,
+                sparkUsage: nil,
+                sparkWeeklyUsage: nil,
                 sessionResetDate: nil,
-                weeklyResetDate: weeklyResetDate
+                weeklyResetDate: weeklyResetDate,
+                sparkResetDate: nil,
+                sparkWeeklyResetDate: nil
             )
         }
 
@@ -230,22 +246,32 @@ public struct CodexProvider: Provider {
     private func parseUsageFromFlexibleJSON(_ root: Any) -> CodexUsageSnapshot? {
         var sessionUsage: Double?
         var weeklyUsage: Double?
+        var sparkUsage: Double?
+        var sparkWeeklyUsage: Double?
         var sessionResetDate: Date?
         var weeklyResetDate: Date?
+        var sparkResetDate: Date?
+        var sparkWeeklyResetDate: Date?
 
         if let dict = root as? [String: Any] {
             if let parsed = parsePrimarySecondaryWindows(in: dict) {
                 sessionUsage = parsed.sessionUsage
                 weeklyUsage = parsed.weeklyUsage
+                sparkUsage = parsed.sparkUsage
+                sparkWeeklyUsage = parsed.sparkWeeklyUsage
                 sessionResetDate = parsed.sessionResetDate
                 weeklyResetDate = parsed.weeklyResetDate
+                sparkResetDate = parsed.sparkResetDate
+                sparkWeeklyResetDate = parsed.sparkWeeklyResetDate
             }
 
-            if let sessionBucket = value(for: ["five_hour", "fiveHour", "rolling_5h", "five_hour_window"], in: dict) {
+            if sessionUsage == nil,
+               let sessionBucket = value(for: ["five_hour", "fiveHour", "rolling_5h", "five_hour_window"], in: dict) {
                 sessionUsage = usagePercent(in: sessionBucket)
                 sessionResetDate = resetDate(in: sessionBucket)
             }
-            if let weeklyBucket = value(for: ["seven_day", "sevenDay", "rolling_7d", "seven_day_window"], in: dict) {
+            if weeklyUsage == nil,
+               let weeklyBucket = value(for: ["seven_day", "sevenDay", "rolling_7d", "seven_day_window"], in: dict) {
                 weeklyUsage = usagePercent(in: weeklyBucket)
                 weeklyResetDate = resetDate(in: weeklyBucket)
             }
@@ -269,7 +295,11 @@ public struct CodexProvider: Provider {
                 ).map(normalizeUsage)
             }
 
-            if let windows = findArray(in: root, for: ["usage_windows", "windows", "usageWindows", "buckets"]) {
+            if let windows = findArray(
+                in: root,
+                for: ["usage_windows", "windows", "usageWindows", "buckets"],
+                excludingPathTokens: ["additional_rate_limits", "additionalRateLimits", "additionalLimits", "spark"]
+            ) {
                 let parsed = parseWindowList(windows)
                 if sessionUsage == nil {
                     sessionUsage = parsed.sessionUsage
@@ -277,11 +307,39 @@ public struct CodexProvider: Provider {
                 if weeklyUsage == nil {
                     weeklyUsage = parsed.weeklyUsage
                 }
+                if sparkUsage == nil {
+                    sparkUsage = parsed.sparkUsage
+                }
+                if sparkWeeklyUsage == nil {
+                    sparkWeeklyUsage = parsed.sparkWeeklyUsage
+                }
                 if sessionResetDate == nil {
                     sessionResetDate = parsed.sessionResetDate
                 }
                 if weeklyResetDate == nil {
                     weeklyResetDate = parsed.weeklyResetDate
+                }
+                if sparkResetDate == nil {
+                    sparkResetDate = parsed.sparkResetDate
+                }
+                if sparkWeeklyResetDate == nil {
+                    sparkWeeklyResetDate = parsed.sparkWeeklyResetDate
+                }
+            }
+
+            if let additional = findArray(in: root, for: ["additional_rate_limits", "additionalRateLimits", "additionalLimits"]),
+               let spark = parseSparkUsage(in: additional) {
+                if sparkUsage == nil {
+                    sparkUsage = spark.primaryPercent
+                }
+                if sparkWeeklyUsage == nil {
+                    sparkWeeklyUsage = spark.secondaryPercent
+                }
+                if sparkResetDate == nil {
+                    sparkResetDate = spark.primaryResetDate ?? spark.secondaryResetDate
+                }
+                if sparkWeeklyResetDate == nil {
+                    sparkWeeklyResetDate = spark.secondaryResetDate ?? spark.primaryResetDate
                 }
             }
 
@@ -303,11 +361,15 @@ public struct CodexProvider: Provider {
             let parsed = parseWindowList(windows)
             sessionUsage = parsed.sessionUsage
             weeklyUsage = parsed.weeklyUsage
+            sparkUsage = parsed.sparkUsage
+            sparkWeeklyUsage = parsed.sparkWeeklyUsage
             sessionResetDate = parsed.sessionResetDate
             weeklyResetDate = parsed.weeklyResetDate
+            sparkResetDate = parsed.sparkResetDate
+            sparkWeeklyResetDate = parsed.sparkWeeklyResetDate
         }
 
-        if sessionUsage == nil && weeklyUsage == nil {
+        if sessionUsage == nil && weeklyUsage == nil && sparkUsage == nil && sparkWeeklyUsage == nil {
             var candidates: [UsageCandidate] = []
             collectUsageCandidates(in: root, path: "", candidates: &candidates)
             if !candidates.isEmpty {
@@ -351,20 +413,28 @@ public struct CodexProvider: Provider {
             }
         }
 
-        if sessionUsage == nil && weeklyUsage == nil {
+        if sessionUsage == nil && weeklyUsage == nil && sparkUsage == nil && sparkWeeklyUsage == nil {
             return nil
         }
 
         return CodexUsageSnapshot(
             sessionUsage: sessionUsage,
             weeklyUsage: weeklyUsage,
+            sparkUsage: sparkUsage,
+            sparkWeeklyUsage: sparkWeeklyUsage,
             sessionResetDate: sessionResetDate,
-            weeklyResetDate: weeklyResetDate
+            weeklyResetDate: weeklyResetDate,
+            sparkResetDate: sparkResetDate,
+            sparkWeeklyResetDate: sparkWeeklyResetDate
         )
     }
 
     private func findWindowData(in value: Any, tokens: [String]) -> (usage: Double?, reset: Date?) {
         if let dict = value as? [String: Any] {
+            if isSparkScoped(dict) {
+                return (nil, nil)
+            }
+
             let labelInFields = firstString(
                 in: dict,
                 keys: ["window", "period", "name", "bucket", "type", "id", "key"]
@@ -380,6 +450,12 @@ public struct CodexProvider: Provider {
 
             for (key, child) in dict {
                 let keyLower = key.lowercased()
+                if keyLower.contains("spark")
+                    || keyLower.contains("additional_rate_limits")
+                    || keyLower.contains("additionalratelimits")
+                    || keyLower.contains("additionallimits") {
+                    continue
+                }
                 if tokens.contains(where: { keyLower.contains($0) }),
                    let usage = usagePercent(in: child) {
                     let reset = resetDate(in: child)
@@ -422,6 +498,10 @@ public struct CodexProvider: Provider {
                 in: window,
                 keys: ["window", "period", "name", "bucket", "type", "id", "key"]
             )?.lowercased() ?? ""
+
+            if label.contains("spark") {
+                continue
+            }
 
             let durationHours = number(
                 for: ["duration_hours", "window_hours", "hours", "period_hours", "rolling_hours"],
@@ -492,8 +572,12 @@ public struct CodexProvider: Provider {
         return CodexUsageSnapshot(
             sessionUsage: sessionUsage,
             weeklyUsage: weeklyUsage,
+            sparkUsage: nil,
+            sparkWeeklyUsage: nil,
             sessionResetDate: sessionResetDate,
-            weeklyResetDate: weeklyResetDate
+            weeklyResetDate: weeklyResetDate,
+            sparkResetDate: nil,
+            sparkWeeklyResetDate: nil
         )
     }
 
@@ -522,49 +606,80 @@ public struct CodexProvider: Provider {
             return nil
         }
 
-        if let value = number(
-            for: [
-                "utilization", "usage", "value", "ratio", "percent", "percentage",
-                "used_percent", "percent_used", "usage_ratio", "usagePercent"
-            ],
-            in: object
-        ) {
-            return normalizeUsage(value)
-        }
-
         guard let dict = object as? [String: Any] else {
+            if let value = object as? Double {
+                return normalizePercentCandidate(value, assumeAlreadyPercent: value > 1)
+            }
+            if let value = object as? Int {
+                return normalizePercentCandidate(Double(value), assumeAlreadyPercent: true)
+            }
+            if let value = object as? NSNumber {
+                return normalizePercentCandidate(value.doubleValue, assumeAlreadyPercent: value.doubleValue > 1)
+            }
+            if let value = object as? String, let parsed = parseLooseDouble(value) {
+                return normalizePercentCandidate(parsed, assumeAlreadyPercent: parsed > 1)
+            }
             return nil
         }
+
+        let limit = number(for: ["limit", "max", "total", "allowed", "quota", "cap"], in: dict)
 
         if let used = number(
             for: ["used", "consumed", "current", "usage_count", "used_count", "count"],
             in: dict
         ),
-        let limit = number(
-            for: ["limit", "max", "total", "allowed", "quota", "cap"],
-            in: dict
-        ),
+        let limit,
         limit > 0 {
             return normalizeUsage(used / limit)
+        }
+
+        if let usageCount = number(for: ["usage"], in: dict),
+           let limit,
+           limit > 0 {
+            return normalizeUsage(usageCount / limit)
         }
 
         if let remaining = number(
             for: ["remaining", "remaining_count", "left", "available"],
             in: dict
         ),
-        let limit = number(
-            for: ["limit", "max", "total", "allowed", "quota", "cap"],
-            in: dict
-        ),
+        let limit,
         limit > 0 {
             return normalizeUsage((limit - remaining) / limit)
+        }
+
+        if let percent = number(
+            for: ["used_percent", "usedPercent", "usage_percent", "percent_used", "percent", "percentage"],
+            in: dict
+        ) {
+            return normalizePercentCandidate(percent, assumeAlreadyPercent: true)
+        }
+
+        if let ratio = number(for: ["usage_ratio", "ratio"], in: dict) {
+            return normalizePercentCandidate(ratio, assumeAlreadyPercent: false)
+        }
+
+        if let utilization = number(for: ["utilization", "usagePercent", "value"], in: dict) {
+            return normalizePercentCandidate(utilization, assumeAlreadyPercent: utilization > 1)
         }
 
         return nil
     }
 
     private func collectUsageCandidates(in value: Any, path: String, candidates: inout [UsageCandidate]) {
+        let loweredPath = path.lowercased()
+        if loweredPath.contains("spark")
+            || loweredPath.contains("additional_rate_limits")
+            || loweredPath.contains("additionalratelimits")
+            || loweredPath.contains("additionallimits") {
+            return
+        }
+
         if let dict = value as? [String: Any] {
+            if isSparkScoped(dict) {
+                return
+            }
+
             if let percent = usagePercent(in: dict) {
                 let reset = resetDate(in: dict)
                 candidates.append(UsageCandidate(path: path, percent: percent, resetDate: reset))
@@ -625,29 +740,18 @@ public struct CodexProvider: Provider {
         return CodexUsageSnapshot(
             sessionUsage: sessionUsage,
             weeklyUsage: weeklyUsage,
+            sparkUsage: nil,
+            sparkWeeklyUsage: nil,
             sessionResetDate: sessionResetDate,
-            weeklyResetDate: weeklyResetDate
+            weeklyResetDate: weeklyResetDate,
+            sparkResetDate: nil,
+            sparkWeeklyResetDate: nil
         )
     }
 
     private func strictWindowUsagePercent(in object: Any?) -> Double? {
         guard let dict = object as? [String: Any] else {
             return nil
-        }
-
-        if let rawPercent = number(
-            for: [
-                "used_percent",
-                "usedPercent",
-                "utilization",
-                "usage_percent",
-                "percent_used",
-                "usage_ratio"
-            ],
-            in: dict
-        ),
-        let normalized = normalizePercentCandidate(rawPercent) {
-            return normalized
         }
 
         if let used = number(
@@ -660,14 +764,34 @@ public struct CodexProvider: Provider {
         ),
         limit > 0 {
             let derived = normalizeUsage(used / limit)
-            return normalizePercentCandidate(derived)
+            return normalizePercentCandidate(derived, assumeAlreadyPercent: true)
+        }
+
+        if let percent = number(
+            for: ["used_percent", "usedPercent", "usage_percent", "percent_used", "percent", "percentage"],
+            in: dict
+        ) {
+            return normalizePercentCandidate(percent, assumeAlreadyPercent: true)
+        }
+
+        if let ratio = number(for: ["usage_ratio", "ratio"], in: dict) {
+            return normalizePercentCandidate(ratio, assumeAlreadyPercent: false)
+        }
+
+        if let utilization = number(for: ["utilization", "usagePercent", "value"], in: dict) {
+            return normalizePercentCandidate(utilization, assumeAlreadyPercent: utilization > 1)
         }
 
         return nil
     }
 
-    private func normalizePercentCandidate(_ value: Double) -> Double? {
-        let normalized = normalizeUsage(value)
+    private func normalizePercentCandidate(_ value: Double, assumeAlreadyPercent: Bool) -> Double? {
+        let normalized: Double
+        if assumeAlreadyPercent {
+            normalized = value
+        } else {
+            normalized = normalizeUsage(value)
+        }
         guard normalized >= 0, normalized <= 200 else {
             return nil
         }
@@ -750,9 +874,101 @@ public struct CodexProvider: Provider {
         return CodexUsageSnapshot(
             sessionUsage: sessionPercent,
             weeklyUsage: weeklyPercent,
+            sparkUsage: nil,
+            sparkWeeklyUsage: nil,
             sessionResetDate: sessionResetDate,
-            weeklyResetDate: weeklyResetDate
+            weeklyResetDate: weeklyResetDate,
+            sparkResetDate: nil,
+            sparkWeeklyResetDate: nil
         )
+    }
+
+    private func parseSparkUsage(
+        in additionalLimits: [Any]
+    ) -> (
+        primaryPercent: Double?,
+        secondaryPercent: Double?,
+        primaryResetDate: Date?,
+        secondaryResetDate: Date?
+    )? {
+        var primaryPercent: Double?
+        var secondaryPercent: Double?
+        var primaryResetDate: Date?
+        var secondaryResetDate: Date?
+
+        for item in additionalLimits {
+            guard let dict = item as? [String: Any] else {
+                continue
+            }
+
+            let limitName = firstString(
+                in: dict,
+                keys: ["limit_name", "name", "id", "key", "model", "model_name"]
+            )?.lowercased() ?? ""
+
+            guard limitName.contains("spark") else {
+                continue
+            }
+
+            let root = value(for: ["rate_limit", "rateLimit"], in: dict) ?? item
+
+            if let rateLimit = root as? [String: Any] {
+                let primaryWindow = value(for: ["primary_window", "primaryWindow"], in: rateLimit)
+                let secondaryWindow = value(for: ["secondary_window", "secondaryWindow"], in: rateLimit)
+
+                if primaryPercent == nil {
+                    primaryPercent = primaryWindow.flatMap { strictWindowUsagePercent(in: $0) }
+                }
+                if secondaryPercent == nil {
+                    secondaryPercent = secondaryWindow.flatMap { strictWindowUsagePercent(in: $0) }
+                }
+
+                if primaryResetDate == nil {
+                    primaryResetDate = primaryWindow.flatMap { resetDate(in: $0) }
+                }
+                if secondaryResetDate == nil {
+                    secondaryResetDate = secondaryWindow.flatMap { resetDate(in: $0) }
+                }
+            }
+
+            if primaryPercent == nil, let usage = usagePercent(in: root) {
+                primaryPercent = usage
+                if primaryResetDate == nil {
+                    primaryResetDate = resetDate(in: root)
+                }
+            }
+        }
+
+        if primaryPercent == nil && secondaryPercent == nil {
+            return nil
+        }
+
+        return (
+            primaryPercent: primaryPercent,
+            secondaryPercent: secondaryPercent,
+            primaryResetDate: primaryResetDate,
+            secondaryResetDate: secondaryResetDate
+        )
+    }
+
+    private func isSparkScoped(_ dict: [String: Any]) -> Bool {
+        let label = firstString(
+            in: dict,
+            keys: ["limit_name", "name", "id", "key", "model", "model_name", "window", "period", "bucket", "type"]
+        )?.lowercased() ?? ""
+
+        if label.contains("spark") {
+            return true
+        }
+
+        for key in dict.keys {
+            let lower = key.lowercased()
+            if lower.contains("spark") {
+                return true
+            }
+        }
+
+        return false
     }
 
     private func headerNumber(names: [String], headers: [AnyHashable: Any]) -> Double? {
@@ -979,15 +1195,40 @@ public struct CodexProvider: Provider {
         return nil
     }
 
-    private func findArray(in value: Any, for keys: [String]) -> [Any]? {
+    private func findArray(
+        in value: Any,
+        for keys: [String],
+        excludingPathTokens: [String] = []
+    ) -> [Any]? {
+        let loweredExclusions = excludingPathTokens.map { $0.lowercased() }
+        return findArray(in: value, for: keys, path: "", excludingPathTokens: loweredExclusions)
+    }
+
+    private func findArray(
+        in value: Any,
+        for keys: [String],
+        path: String,
+        excludingPathTokens: [String]
+    ) -> [Any]? {
+        let loweredPath = path.lowercased()
+        if excludingPathTokens.contains(where: { loweredPath.contains($0) }) {
+            return nil
+        }
+
         if let dict = value as? [String: Any] {
             for key in keys {
                 if let arr = dict[key] as? [Any] {
                     return arr
                 }
             }
-            for child in dict.values {
-                if let found = findArray(in: child, for: keys) {
+            for (key, child) in dict {
+                let childPath = path.isEmpty ? key : "\(path).\(key)"
+                if let found = findArray(
+                    in: child,
+                    for: keys,
+                    path: childPath,
+                    excludingPathTokens: excludingPathTokens
+                ) {
                     return found
                 }
             }

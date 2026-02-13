@@ -16,6 +16,10 @@ public struct UsageData: Sendable {
     public let weeklyUsage: Double?
 
     public let sonnetUsage: Double?
+
+    public let sparkUsage: Double?
+
+    public let sparkWeeklyUsage: Double?
     
     /// 남은 크레딧 또는 토큰 수
     /// nil인 경우 프로바이더가 이 정보를 제공하지 않음
@@ -30,6 +34,10 @@ public struct UsageData: Sendable {
     public let weeklyResetDate: Date?
 
     public let sonnetResetDate: Date?
+
+    public let sparkResetDate: Date?
+
+    public let sparkWeeklyResetDate: Date?
 
     public let isSonnetOnly: Bool?
     
@@ -49,11 +57,15 @@ public struct UsageData: Sendable {
         sessionUsage: Double? = nil,
         weeklyUsage: Double? = nil,
         sonnetUsage: Double? = nil,
+        sparkUsage: Double? = nil,
+        sparkWeeklyUsage: Double? = nil,
         remainingCredits: Double? = nil,
         resetDate: Date? = nil,
         sessionResetDate: Date? = nil,
         weeklyResetDate: Date? = nil,
         sonnetResetDate: Date? = nil,
+        sparkResetDate: Date? = nil,
+        sparkWeeklyResetDate: Date? = nil,
         isSonnetOnly: Bool? = nil,
         lastUpdated: Date = Date()
     ) {
@@ -61,11 +73,15 @@ public struct UsageData: Sendable {
         self.sessionUsage = sessionUsage
         self.weeklyUsage = weeklyUsage
         self.sonnetUsage = sonnetUsage
+        self.sparkUsage = sparkUsage
+        self.sparkWeeklyUsage = sparkWeeklyUsage
         self.remainingCredits = remainingCredits
         self.resetDate = resetDate
         self.sessionResetDate = sessionResetDate
         self.weeklyResetDate = weeklyResetDate
         self.sonnetResetDate = sonnetResetDate
+        self.sparkResetDate = sparkResetDate
+        self.sparkWeeklyResetDate = sparkWeeklyResetDate
         self.isSonnetOnly = isSonnetOnly
         self.lastUpdated = lastUpdated
     }
