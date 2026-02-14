@@ -44,8 +44,7 @@ public actor ClaudeProvider: Provider {
     }
 
     public func invalidateCache() async {
-        cachedOAuth = nil
-        didAttemptInteractiveKeychainLookup = false
+        resetCachedState()
     }
 
     private func fetchUsage(using oauth: ClaudeOAuthResult, allowRetry: Bool) async throws -> UsageData {
@@ -61,7 +60,7 @@ public actor ClaudeProvider: Provider {
             } catch {
                 // Fall back to reloading credentials from keychain/files.
             }
-            cachedOAuth = nil
+            resetCachedState()
             let freshOAuth = try getFreshOAuth()
             return try await fetchUsage(using: freshOAuth, allowRetry: false)
         }
@@ -77,10 +76,17 @@ public actor ClaudeProvider: Provider {
             } catch {
                 // Fall back to reloading credentials from keychain/files.
             }
-            cachedOAuth = nil
+            resetCachedState()
             let freshOAuth = try getFreshOAuth()
             return try await fetchUsage(using: freshOAuth, allowRetry: false)
         }
+    }
+
+    /// Clear both the cached OAuth token and the Keychain lookup guard so that
+    /// the next `readOAuth()` call will re-read credentials from files AND Keychain.
+    private func resetCachedState() {
+        cachedOAuth = nil
+        didAttemptInteractiveKeychainLookup = false
     }
 
     private func getCachedOrFreshOAuth() throws -> ClaudeOAuthResult {
