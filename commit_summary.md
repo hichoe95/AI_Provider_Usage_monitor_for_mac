@@ -1,47 +1,40 @@
 # Commit Summary
 
-Date: 2026-02-13
+Date: 2026-02-15
 Branch: `main`
 
 ## Session Work (Deduplicated)
 
-### 1) App Rename to AIUsageMonitor
-- Renamed executable product from `UsageMonitor` to `AIUsageMonitor`.
-- Updated install/package/run/uninstall scripts for the new app bundle and executable names.
-- Updated user-facing titles in Settings window and test notification message.
+### 1) fix(claude): reset keychain lookup flag on OAuth retry
+
+OAuth 토큰 만료 후 refresh 실패 시 `cachedOAuth = nil`만 하고
+`didAttemptInteractiveKeychainLookup`을 리셋하지 않아 키체인 재읽기가
+영구 차단되던 버그 수정. `resetCachedState()` 메서드로 통합.
 
 Files:
-- `Package.swift`
-- `Scripts/compile_and_run.sh`
-- `Scripts/install_app.sh`
-- `Scripts/package_app.sh`
-- `uninstall.sh`
+- `Sources/UsageMonitorCore/Providers/Claude/ClaudeProvider.swift`
+
+### 2) fix(store): clear stale data on error and preserve trend history
+
+provider fetch 에러 시 기존 데이터가 남아 10분 후 `isStale` 블랙 오버레이가
+표시되던 문제 수정. `clearStaleData(for:)` 추가로 에러 시 해당 provider 데이터 nil 처리.
+`updateStore(with:)`에서 현재 데이터가 nil일 때 `previousData`를 보존하여
+에러→복구 전환 시 trend 화살표가 소실되지 않도록 보호.
+
+Files:
+- `Sources/UsageMonitor/Store/UsageStore.swift`
+
+### 3) fix(statusbar): sync icon update on provider error changes
+
+`$providerErrors` Combine 구독에 `updateIcon()` 누락으로 에러 발생 시
+메뉴는 갱신되지만 status bar 아이콘은 갱신되지 않던 불일치 수정.
+
+Files:
 - `Sources/UsageMonitor/UI/StatusItemController.swift`
-- `Sources/UsageMonitor/Store/NotificationManager.swift`
-
-### 2) Codex Dropdown Remaining-Time Fix
-- Split Codex reset handling into `sessionResetDate` and `weeklyResetDate` so 5h and 7d rows use independent reset targets.
-- Extended Codex parsing for `rate_limit.primary_window` / `secondary_window` payloads.
-- Added support for `reset_at` and `reset_after_seconds` window reset fields.
-- Hardened usage parsing to avoid false-positive 100% lock-in from malformed/non-percent fields.
-- Improved header reset parsing to handle both epoch and duration formats (e.g. `7m12s`, `90ms`).
-
-Files:
-- `Sources/UsageMonitorCore/Providers/Codex/CodexProvider.swift`
-
-### 3) README Sync + Changelog Cleanup (KR/EN)
-- Updated README branding text from `UsageMonitor` to `AIUsageMonitor`.
-- Increased top hero icon from 128x128 to 256x256.
-- Updated uninstall and notification app-name references.
-- Reorganized README changelog so latest date stays visible at top and older dates are collapsed.
-- Kept KR/EN README changelog structure mirrored.
-
-Files:
-- `README.md`
-- `README_EN.md`
 
 ## Planned Commit Units
 
-1. `refactor(app): rename product and scripts to AIUsageMonitor`
-2. `fix(codex): separate reset windows and harden usage parsing`
-3. `docs(readme): sync AIUsageMonitor branding and changelog layout`
+1. `fix(claude): reset keychain lookup flag on OAuth retry`
+2. `fix(store): clear stale data on error and preserve trend history`
+3. `fix(statusbar): sync icon update on provider error changes`
+4. `docs: update changelog for 2026-02-15 session fixes`

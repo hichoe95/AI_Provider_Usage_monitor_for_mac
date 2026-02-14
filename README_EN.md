@@ -194,7 +194,17 @@ Local source build/install is the most reliable path for now.
 
 ## Changelog
 
-### 2026-02-13 (Latest)
+### 2026-02-15 (Latest)
+
+- Fixed Claude OAuth token retry permanently blocking Keychain re-read (`notConfigured` stuck state)
+- Clear stale provider data on fetch error to prevent black status bar overlay
+- Preserve trend arrows across error-to-recovery transitions
+- Fixed status bar icon not updating when provider errors change
+
+<details>
+<summary>Previous changes</summary>
+
+### 2026-02-13
 
 - Unified app branding to `AIUsageMonitor` (product/bundle/scripts/UI strings)
 - Fixed packaging/installer mismatch between executable name and app bundle name
@@ -206,9 +216,6 @@ Local source build/install is the most reliable path for now.
 - Increased app icon scale and regenerated `.icns` assets
 - Rounded status bar gauge corners
 - Synced KR/EN README updates and increased top icon size to 256x256
-
-<details>
-<summary>Previous changes</summary>
 
 ### 2026-02-12
 

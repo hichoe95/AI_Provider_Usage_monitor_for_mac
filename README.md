@@ -193,7 +193,17 @@ GOOGLE_GENERATIVE_AI_API_KEY=... python3 Scripts/generate_icon_with_gemini.py --
 
 ## 변경 로그
 
-### 2026-02-13 (최신)
+### 2026-02-15 (최신)
+
+- Claude OAuth 토큰 만료 후 키체인 재읽기가 차단되던 버그 수정 (`notConfigured` 영구 고착 방지)
+- provider fetch 에러 시 stale 데이터 클리어 → status bar 검은 배경 오버레이 방지
+- 에러→복구 전환 시 trend 화살표(↑↓) 소실 방지
+- provider 에러 발생 시 status bar 아이콘-메뉴 동기화 누락 수정
+
+<details>
+<summary>이전 변경 내역</summary>
+
+### 2026-02-13
 
 - 앱 이름을 `AIUsageMonitor`로 통합 (product/bundle/script/UI 문자열 정리)
 - 패키징/설치 스크립트에서 실행 파일명과 앱 번들명 불일치 문제 수정
@@ -205,9 +215,6 @@ GOOGLE_GENERATIVE_AI_API_KEY=... python3 Scripts/generate_icon_with_gemini.py --
 - 앱 아이콘 비율 확대 및 `.icns` 재생성
 - status bar 게이지 바 모서리 둥글게 렌더링
 - README KR/EN 동기화 및 상단 아이콘 크기(256x256) 조정
-
-<details>
-<summary>이전 변경 내역</summary>
 
 ### 2026-02-12
 
