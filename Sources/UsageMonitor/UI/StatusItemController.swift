@@ -123,6 +123,7 @@ final class StatusItemController: ObservableObject {
 
         usageStore.$providerErrors
             .sink { [weak self] _ in
+                self?.updateIcon()
                 self?.updateMenu()
             }
             .store(in: &cancellables)
