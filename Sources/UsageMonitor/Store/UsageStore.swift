@@ -92,6 +92,7 @@ final class UsageStore: ObservableObject {
                 }
             } catch {
                 newErrors[provider.name] = error.localizedDescription
+                clearStaleData(for: provider.name)
             }
         }
         
@@ -132,22 +133,44 @@ final class UsageStore: ObservableObject {
     
     // MARK: - Private Methods
     
+    private func clearStaleData(for providerName: String) {
+        switch providerName {
+        case "Claude Code":
+            previousClaudeData = claudeData
+            claudeData = nil
+        case "Codex":
+            previousCodexData = codexData
+            codexData = nil
+        case "Copilot":
+            previousCopilotData = copilotData
+            copilotData = nil
+        case "Gemini":
+            previousGeminiData = geminiData
+            geminiData = nil
+        case "OpenRouter":
+            previousOpenRouterData = openRouterData
+            openRouterData = nil
+        default:
+            break
+        }
+    }
+
     private func updateStore(with data: UsageData) {
         switch data.provider {
         case "Claude Code":
-            previousClaudeData = claudeData
+            if claudeData != nil { previousClaudeData = claudeData }
             claudeData = data
         case "Codex":
-            previousCodexData = codexData
+            if codexData != nil { previousCodexData = codexData }
             codexData = data
         case "Copilot":
-            previousCopilotData = copilotData
+            if copilotData != nil { previousCopilotData = copilotData }
             copilotData = data
         case "Gemini":
-            previousGeminiData = geminiData
+            if geminiData != nil { previousGeminiData = geminiData }
             geminiData = data
         case "OpenRouter":
-            previousOpenRouterData = openRouterData
+            if openRouterData != nil { previousOpenRouterData = openRouterData }
             openRouterData = data
         default:
             break
