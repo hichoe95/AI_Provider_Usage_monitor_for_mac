@@ -3,26 +3,64 @@
 <!-- MIRROR: keep section order aligned with README.md -->
 
 <div align="center">
-  <img src="docs/images/app-icon.png" alt="AIUsageMonitor App Icon" width="256" height="256" />
+  <img src="docs/images/app-icon.png" alt="AIUsageMonitor" width="180" />
+
+  <h1>AIUsageMonitor</h1>
+
+  <p><strong>WORK UNTIL USAGE IS EXHAUSTED.</strong></p>
+
+  <p>Monitor Claude, Codex, Copilot, Gemini & OpenRouter usage<br/>right from your macOS menu bar.</p>
+
+  <p>
+    English&nbsp;&nbsp;|&nbsp;&nbsp;<a href="README.md">한국어</a>
+  </p>
+
+  <p>
+    <img src="https://img.shields.io/badge/macOS-14%2B-0078D4?style=flat-square&logo=apple&logoColor=white" alt="macOS 14+" />
+    <img src="https://img.shields.io/badge/Swift-6.0-F05138?style=flat-square&logo=swift&logoColor=white" alt="Swift 6.0" />
+    <img src="https://img.shields.io/badge/license-MIT-97CA00?style=flat-square" alt="MIT License" />
+  </p>
+
+  <img src="docs/images/screenshot-menu-2026-02-15.png" alt="AIUsageMonitor Screenshot" width="420" />
 </div>
 
-<div align="center">
-  <h1>WORK UNTIL USAGE IS EXHAUSTED.</h1>
-</div>
+---
 
-AIUsageMonitor is a native macOS menu bar app that shows Claude, Codex, Copilot, Gemini, and OpenRouter usage at a glance.
+## Why?
 
-[한국어 README](README.md)
+When using AI coding tools (Claude Code, Codex, Copilot, etc.), **you will eventually hit your usage limit mid-task**.
+By the time you check the dashboard, it's already too late.
 
-![macOS](https://img.shields.io/badge/macOS-14%2B-blue)
-![Swift](https://img.shields.io/badge/Swift-6.0-orange)
-![License](https://img.shields.io/badge/license-MIT-green)
+AIUsageMonitor shows each provider's usage **in real time from your menu bar**.
+Get notified before hitting limits so your workflow never gets interrupted.
 
-![UsageMonitor Menu Screenshot](docs/images/screenshot-menu-2026-02-13.png)
+---
 
-## Quick Start
+## Features
 
-### 1) Install
+| Feature | Description |
+|---|---|
+| **Real-time usage bars** | 5-hour / 7-day usage gauge per provider |
+| **Time remaining** | Countdown to each reset window (`2h 15m`, `3d 4h`) |
+| **Codex Spark usage** | Separate tracking for Codex Spark model |
+| **Trend indicators** | Usage trend arrows (`↑` / `↓`) |
+| **Usage alerts** | macOS notifications at configurable thresholds |
+| **OpenRouter balance** | Remaining credits in dollars |
+| **Dashboard shortcuts** | One-click jump to each provider's dashboard |
+
+**Supported Providers:**
+
+| Provider | Auth Method | Displayed Info |
+|---|---|---|
+| Claude Code | OAuth (Keychain) | 5h, 7d, Sonnet usage |
+| Codex (OpenAI) | OAuth (`~/.codex/auth.json`) | 5h, 7d, Spark usage |
+| Copilot | GitHub CLI (`gh`) | Usage |
+| Gemini | Google OAuth / API Key | Usage |
+| OpenRouter | API Key | Balance ($) |
+
+---
+
+## Install
 
 ```bash
 git clone https://github.com/hichoe95/AI_Provider_Usage_monitor_for_mac.git
@@ -30,139 +68,61 @@ cd AI_Provider_Usage_monitor_for_mac
 ./install.sh
 ```
 
-`install.sh` handles everything automatically:
-- release build -> app install -> launch
-- step-by-step spinner/animated progress output
-- install log file: `${TMPDIR:-/tmp}/usagemonitor-install.log`
-- install target: `/Applications` (falls back to `~/Applications` without permission)
+`install.sh` handles the entire build → install → launch process automatically.
 
-### 2) First Setup
-
-1. Run provider login in terminal on the same local Mac
-2. Open menu bar icon -> `Settings...` and enable providers you use
-3. Click `Refresh Now` (`⌘R`)
-
-CLI login commands differ by version, so check `--help`:
-
-```bash
-claude --help
-codex --help
-gh --help
-gemini --help
-```
-
-### 3) Enable Notifications (Required)
-
-1. Open `Settings...` -> `Notifications`
-2. Turn ON `Enable usage alerts`
-3. Click `Request permission`
-4. Confirm status shows `Notifications: Allowed`
-5. Click `Send test alert` and verify a banner appears
-
-If status is `Denied`, allow notifications in macOS `System Settings -> Notifications -> AIUsageMonitor`.
-
-## Features
-
-- per-provider usage bars: `5h`, `7d` (Claude also shows `sn`)
-- per-bar remaining time: `2h 15m`, `3d 4h`
-- health dot, trend arrows (`↑`/`↓`), `Open Dashboard ↗`, `Updated ... ago`
-
-## Shortcuts
-
-- `⌘R`: Refresh Now
-- `⌘,`: Settings
-- `⌘D`: Claude Dashboard
-- `⌘Q`: Quit
-
-## Update / Uninstall
-
-**Update**
-
-```bash
-cd AI_Provider_Usage_monitor_for_mac
-git pull
-./install.sh
-```
-
-**Uninstall**
-
-```bash
-cd AI_Provider_Usage_monitor_for_mac
-./uninstall.sh
-```
+> **Requirements:** macOS 14+, Xcode 16+ (Swift 6), Git
 
 <details>
-<summary>Manual uninstall</summary>
+<summary>Install troubleshooting</summary>
 
 ```bash
-rm -rf /Applications/AIUsageMonitor.app
-# or if installed in ~/Applications
-rm -rf ~/Applications/AIUsageMonitor.app
-defaults delete com.choihwanil.usagemonitor 2>/dev/null || true
-rm -rf ~/Library/Application\ Support/UsageMonitor
-rm -rf ~/Library/Caches/com.choihwanil.usagemonitor ~/Library/Caches/UsageMonitor
+# Missing Xcode CLI tools
+xcode-select --install
+
+# Swift/SDK version mismatch
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+sudo xcodebuild -runFirstLaunch
+
+# Check install log
+cat ${TMPDIR:-/tmp}/usagemonitor-install.log
 ```
 
 </details>
 
-## Troubleshooting
+---
 
-### 1) Only `No data`
+## Initial Setup (Required)
 
-- make sure provider login exists on local Mac
-- make sure app and terminal use the same macOS user account
-- click `Refresh Now`
+### 1. Provider Login
 
-### 2) Repeated Keychain prompts
-
-- choose `Always Allow` when prompted
-- if you already chose `Allow`, update permissions in Keychain Access
-
-### 3) OpenRouter not showing
-
-- enable OpenRouter in Settings
-- save API key
-- click `Refresh Now`
-
-### 4) `swift` not found
+Log in to each provider from the terminal **on the same Mac** where the app runs.
 
 ```bash
-xcode-select --install
+claude login        # Claude Code
+codex login         # Codex (OpenAI)
+gh auth login       # Copilot (GitHub)
+gemini auth         # Gemini
 ```
 
-### 5) Install fails
+> CLI commands may vary by version. Check `--help` for details.
 
-- check log: `cat ${TMPDIR:-/tmp}/usagemonitor-install.log`
-- inspect the last error lines first
-- if it keeps failing, attach full log in an issue
+### 2. Enable Providers
 
-### 6) Swift/SDK version mismatch
+Menu bar icon → `Settings...` → Turn ON your providers → `Refresh Now` (`⌘R`)
 
-```bash
-sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-sudo xcodebuild -runFirstLaunch
-```
+### 3. Enable Notifications
 
-- Typical error: `SDK is built with ... while this compiler is ...`
-- Re-run `./install.sh` after the commands above
+1. `Settings...` → `Notifications` → `Enable usage alerts` ON
+2. Click `Request permission` → Confirm `Notifications: Allowed`
+3. Click `Send test alert` to verify
 
-### 7) App does not launch or install path is mixed
+> If status shows `Denied`, allow it in macOS **System Settings → Notifications → AIUsageMonitor**.
 
-```bash
-rm -rf /Applications/AIUsageMonitor.app ~/Applications/AIUsageMonitor.app
-./install.sh
-```
-
-- Keep only one install location to avoid path confusion
-
-### 8) App icon does not refresh immediately
-
-- Quit the app and reinstall
-- Finder/Dock icon cache delay can temporarily show the previous icon
+---
 
 ## Token Lifecycle
 
-Each provider has a different login session duration. **Claude Code is significantly shorter than others**, so you may need to re-login daily.
+Each provider has a different login session duration.
 
 | Provider | Login Duration | Notes |
 |---|---|---|
@@ -171,18 +131,15 @@ Each provider has a different login session duration. **Claude Code is significa
 | Copilot | GitHub session | `gh auth login` |
 | Gemini | Google session | `gemini auth` |
 
-### &#x26A0;&#xFE0F; Fix Claude Code Daily Re-login (Must Read)
+### ⚠️ Claude Code: Fix Daily Re-login (Must Read)
 
-If you use Claude Code, **your login may expire once or more per day**.
-This happens because Claude's auth token expires every 8–12 hours and auto-renewal often fails on macOS.
+Claude Code's auth token **expires every 8–12 hours**, and auto-renewal often fails on macOS.
 ([Related issue](https://github.com/anthropics/claude-code/issues/19456))
 
-**Fix: Generate a long-lived token (Recommended)**
-
-Run `claude setup-token` to get a long-lived token so you don't have to re-login daily.
+**Generate a long-lived token to fix this:**
 
 ```bash
-# 1. Generate a long-lived token (opens browser for authentication)
+# 1. Generate a long-lived token (opens browser for auth)
 claude setup-token
 
 # 2. Add the token to your shell config
@@ -193,23 +150,67 @@ echo 'export CLAUDE_CODE_OAUTH_TOKEN="your_token_here"' >> ~/.zshrc && source ~/
 echo 'export CLAUDE_CODE_OAUTH_TOKEN="your_token_here"' >> ~/.bashrc && source ~/.bashrc
 ```
 
-> **Note:** Only available for Pro/Max subscribers.
+> Only available for Pro/Max subscribers.
 
-## Requirements
+---
 
-| Item | Minimum |
+## Keyboard Shortcuts
+
+| Shortcut | Action |
 |---|---|
-| OS | macOS 14 or later |
-| Xcode | 16 or later (includes Swift 6) |
-| Git | Required |
-| Network | Required for provider API requests |
+| `⌘R` | Refresh Now |
+| `⌘,` | Settings |
+| `⌘D` | Claude Dashboard |
+| `⌘Q` | Quit |
 
-Check environment:
+---
+
+## Update / Uninstall
 
 ```bash
-swift --version
-git --version
+# Update
+cd AI_Provider_Usage_monitor_for_mac
+git pull && ./install.sh
+
+# Uninstall
+cd AI_Provider_Usage_monitor_for_mac
+./uninstall.sh
 ```
+
+<details>
+<summary>Manual uninstall</summary>
+
+```bash
+rm -rf /Applications/AIUsageMonitor.app ~/Applications/AIUsageMonitor.app
+defaults delete com.choihwanil.usagemonitor 2>/dev/null || true
+rm -rf ~/Library/Application\ Support/UsageMonitor
+rm -rf ~/Library/Caches/com.choihwanil.usagemonitor ~/Library/Caches/UsageMonitor
+```
+
+</details>
+
+---
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| Only `No data` | Re-login to provider in terminal, then `⌘R` |
+| Repeated Keychain prompts | Choose `Always Allow` in the dialog |
+| OpenRouter not showing | Enable in Settings + save API key |
+| Icon not updating | Quit and reinstall (Finder cache delay) |
+| Install path conflict | `rm -rf /Applications/AIUsageMonitor.app ~/Applications/AIUsageMonitor.app` then reinstall |
+
+---
+
+## FAQ
+
+**Q. Why source install instead of DMG?**
+
+Downloaded DMG apps can be blocked by macOS Gatekeeper.
+Building locally avoids this issue entirely.
+
+---
 
 ## Development
 
@@ -217,51 +218,47 @@ git --version
 swift build
 swift test
 ./Scripts/package_app.sh
-GOOGLE_GENERATIVE_AI_API_KEY=... python3 Scripts/generate_icon_with_gemini.py --output Assets/icon-gemini-raw.png
 ```
 
-## FAQ
-
-### Why source install instead of DMG?
-
-Downloaded DMG apps can be blocked by macOS Gatekeeper.
-Local source build/install is the most reliable path for now.
+---
 
 ## Changelog
 
 ### 2026-02-15 (Latest)
 
-- Fixed Claude OAuth token retry permanently blocking Keychain re-read (`notConfigured` stuck state)
-- Clear stale provider data on fetch error to prevent black status bar overlay
+- Added Codex Spark model usage tracking (separate 5h/7d display)
+- Fixed Claude OAuth token refresh permanently blocking Keychain re-read
+- Clear stale provider data on fetch error (prevents status bar overlay)
 - Preserve trend arrows across error-to-recovery transitions
-- Fixed status bar icon not updating when provider errors change
+- Fixed status bar icon not syncing when provider errors change
+- Added token lifecycle guide (Claude `setup-token` fix)
 
 <details>
 <summary>Previous changes</summary>
 
 ### 2026-02-13
 
-- Unified app branding to `AIUsageMonitor` (product/bundle/scripts/UI strings)
-- Fixed packaging/installer mismatch between executable name and app bundle name
-- Added automatic Xcode toolchain selection + module cache path override in packaging script
-- Stabilized startup cache-directory handling (reduces launch/network cache errors)
-- Improved Codex dropdown to keep 5h and 7d remaining-time displays independent
-- Added Codex parser support for `rate_limit.primary_window`/`secondary_window` + `reset_at`/`reset_after_seconds`
-- Added guard logic to prevent false-positive Codex usage parsing (100% lock issue)
-- Increased app icon scale and regenerated `.icns` assets
+- Unified app branding to `AIUsageMonitor`
+- Fixed packaging/installer executable vs bundle name mismatch
+- Added automatic Xcode toolchain selection + module cache path override
+- Stabilized startup cache-directory handling
+- Improved Codex 5h/7d remaining-time display separation
+- Added Codex parser support for `primary_window`/`secondary_window` + `reset_at`/`reset_after_seconds`
+- Added guard against false-positive Codex usage parsing (100% lock)
+- Increased app icon scale, regenerated `.icns` assets
 - Rounded status bar gauge corners
-- Synced KR/EN README updates and increased top icon size to 256x256
 
 ### 2026-02-12
 
-- release packaging updates
-- fixed Swift 6 actor-isolation build errors
-- fixed Codex auth error
-- adjusted status bar length
-- README updates
+- Release packaging cleanup
+- Fixed Swift 6 actor-isolation build errors
+- Fixed Codex auth error
+- Adjusted status bar length
 
 </details>
 
+---
+
 ## License
 
-MIT License
+[MIT License](LICENSE)

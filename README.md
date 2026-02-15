@@ -3,26 +3,64 @@
 <!-- MIRROR: keep section order aligned with README_EN.md -->
 
 <div align="center">
-  <img src="docs/images/app-icon.png" alt="AIUsageMonitor App Icon" width="256" height="256" />
+  <img src="docs/images/app-icon.png" alt="AIUsageMonitor" width="180" />
+
+  <h1>AIUsageMonitor</h1>
+
+  <p><strong>WORK UNTIL USAGE IS EXHAUSTED.</strong></p>
+
+  <p>Claude, Codex, Copilot, Gemini, OpenRouter 사용량을<br/>macOS 메뉴바에서 한눈에 확인하세요.</p>
+
+  <p>
+    <a href="README_EN.md">English</a>&nbsp;&nbsp;|&nbsp;&nbsp;한국어
+  </p>
+
+  <p>
+    <img src="https://img.shields.io/badge/macOS-14%2B-0078D4?style=flat-square&logo=apple&logoColor=white" alt="macOS 14+" />
+    <img src="https://img.shields.io/badge/Swift-6.0-F05138?style=flat-square&logo=swift&logoColor=white" alt="Swift 6.0" />
+    <img src="https://img.shields.io/badge/license-MIT-97CA00?style=flat-square" alt="MIT License" />
+  </p>
+
+  <img src="docs/images/screenshot-menu-2026-02-15.png" alt="AIUsageMonitor Screenshot" width="420" />
 </div>
 
-<div align="center">
-  <h1>WORK UNTIL USAGE IS EXHAUSTED.</h1>
-</div>
+---
 
-AIUsageMonitor는 Claude, Codex, Copilot, Gemini, OpenRouter 사용량을 macOS 메뉴바에서 한눈에 보여주는 앱입니다.
+## 왜 필요한가요?
 
-[English README](README_EN.md)
+AI 코딩 도구(Claude Code, Codex, Copilot 등)를 쓰다 보면 **사용량 한도에 걸려서 작업이 멈추는 순간**이 옵니다.
+그때서야 대시보드를 열어보면 이미 늦습니다.
 
-![macOS](https://img.shields.io/badge/macOS-14%2B-blue)
-![Swift](https://img.shields.io/badge/Swift-6.0-orange)
-![License](https://img.shields.io/badge/license-MIT-green)
+AIUsageMonitor는 **메뉴바에서 실시간으로** 각 provider의 사용량을 보여줍니다.
+한도에 가까워지면 알림을 보내, 작업 흐름이 끊기기 전에 대비할 수 있습니다.
 
-![UsageMonitor Menu Screenshot](docs/images/screenshot-menu-2026-02-13.png)
+---
 
-## Quick Start
+## 주요 기능
 
-### 1) 설치
+| 기능 | 설명 |
+|---|---|
+| **실시간 사용량 바** | provider별 5시간/7일 사용량을 게이지 바로 표시 |
+| **남은 시간 표시** | 각 구간의 리셋까지 남은 시간 (`2h 15m`, `3d 4h`) |
+| **Codex Spark 사용량** | Codex의 Spark 모델 별도 사용량 추적 |
+| **상태 트렌드** | 사용량 증감 트렌드 화살표 (`↑` / `↓`) |
+| **사용량 알림** | 설정한 임계치 도달 시 macOS 알림 |
+| **OpenRouter 잔액** | 남은 크레딧을 달러 단위로 표시 |
+| **대시보드 바로가기** | 메뉴에서 클릭 한 번으로 각 provider 대시보드 이동 |
+
+**지원 Provider:**
+
+| Provider | 인증 방식 | 표시 정보 |
+|---|---|---|
+| Claude Code | OAuth (Keychain) | 5h, 7d, Sonnet 사용량 |
+| Codex (OpenAI) | OAuth (`~/.codex/auth.json`) | 5h, 7d, Spark 사용량 |
+| Copilot | GitHub CLI (`gh`) | 사용량 |
+| Gemini | Google OAuth / API Key | 사용량 |
+| OpenRouter | API Key | 잔액 ($) |
+
+---
+
+## 설치
 
 ```bash
 git clone https://github.com/hichoe95/AI_Provider_Usage_monitor_for_mac.git
@@ -30,138 +68,61 @@ cd AI_Provider_Usage_monitor_for_mac
 ./install.sh
 ```
 
-`install.sh`가 자동으로 처리합니다.
-- release 빌드 -> 앱 설치 -> 실행
-- 단계별 스피너/애니메이션 진행 로그
-- 설치 로그 파일: `${TMPDIR:-/tmp}/usagemonitor-install.log`
-- 설치 경로: `/Applications` (권한 없으면 `~/Applications`)
+`install.sh`가 빌드부터 설치, 실행까지 자동으로 처리합니다.
 
-### 2) 첫 실행 세팅
-
-1. 앱이 실행되는 **로컬 Mac 터미널**에서 provider 로그인
-2. 메뉴바 아이콘 -> `Settings...`에서 필요한 provider ON
-3. `Refresh Now` (`⌘R`) 클릭
-
-CLI 로그인 명령은 버전에 따라 다를 수 있으니 `--help`로 확인하세요.
-
-```bash
-claude --help
-codex --help
-gh --help
-gemini --help
-```
-
-### 3) 알림 설정 (필수)
-
-1. `Settings...` -> `Notifications` 이동
-2. `Enable usage alerts` ON
-3. `Request permission` 클릭
-4. 상태가 `Notifications: Allowed`인지 확인
-5. `Send test alert`로 실제 배너 확인
-
-`Denied`로 보이면 macOS `시스템 설정 -> 알림 -> AIUsageMonitor`에서 허용하세요.
-
-## Features
-
-- provider별 사용량 바: `5h`, `7d` (Claude는 `sn` 포함)
-- 각 바의 남은 시간: `2h 15m`, `3d 4h`
-- 상태 점, 트렌드(`↑`/`↓`), `Open Dashboard ↗`, `Updated ... ago`
-
-## Shortcuts
-
-- `⌘R`: Refresh Now
-- `⌘,`: Settings
-- `⌘D`: Claude Dashboard
-- `⌘Q`: Quit
-
-## 업데이트 / 삭제
-
-**업데이트**
-
-```bash
-cd AI_Provider_Usage_monitor_for_mac
-git pull
-./install.sh
-```
-
-**삭제**
-
-```bash
-cd AI_Provider_Usage_monitor_for_mac
-./uninstall.sh
-```
+> **요구사항:** macOS 14+, Xcode 16+ (Swift 6), Git
 
 <details>
-<summary>수동 삭제</summary>
+<summary>설치가 안 될 때</summary>
 
 ```bash
-rm -rf /Applications/AIUsageMonitor.app
-# 또는 ~/Applications에 설치된 경우
-rm -rf ~/Applications/AIUsageMonitor.app
-defaults delete com.choihwanil.usagemonitor 2>/dev/null || true
-rm -rf ~/Library/Application\ Support/UsageMonitor
-rm -rf ~/Library/Caches/com.choihwanil.usagemonitor ~/Library/Caches/UsageMonitor
+# Xcode CLI 도구 없을 때
+xcode-select --install
+
+# Swift/SDK 버전 불일치 시
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+sudo xcodebuild -runFirstLaunch
+
+# 설치 로그 확인
+cat ${TMPDIR:-/tmp}/usagemonitor-install.log
 ```
 
 </details>
 
-## Troubleshooting
+---
 
-### 1) `No data`만 보일 때
+## 초기 설정 (필수)
 
-- 로그인한 터미널 계정과 앱 실행 계정이 같은지 확인
-- 로컬 Mac에서 provider 로그인 다시 진행
-- `Refresh Now` 실행
+### 1. Provider 로그인
 
-### 2) Keychain 팝업이 반복될 때
-
-- 팝업에서 `Always Allow` 선택
-- 이미 `Allow`만 눌렀다면 Keychain Access에서 권한을 `Always Allow`로 변경
-
-### 3) OpenRouter가 안 뜰 때
-
-- Settings에서 OpenRouter ON
-- API key 저장 후 `Refresh Now`
-
-### 4) `swift` 명령이 없을 때
+앱이 실행되는 **로컬 Mac 터미널**에서 각 provider에 로그인하세요.
 
 ```bash
-xcode-select --install
+claude login        # Claude Code
+codex login         # Codex (OpenAI)
+gh auth login       # Copilot (GitHub)
+gemini auth         # Gemini
 ```
 
-### 5) 설치 중 오류가 날 때
+> CLI 명령은 버전에 따라 다를 수 있으니 `--help`로 확인하세요.
 
-- 로그 확인: `cat ${TMPDIR:-/tmp}/usagemonitor-install.log`
-- 마지막 에러 줄부터 원인 확인
-- 반복되면 로그 전체를 이슈에 첨부
+### 2. Provider 활성화
 
-### 6) Swift/SDK 버전 불일치 오류가 날 때
+메뉴바 아이콘 → `Settings...` → 사용할 provider ON → `Refresh Now` (`⌘R`)
 
-```bash
-sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-sudo xcodebuild -runFirstLaunch
-```
+### 3. 알림 설정
 
-- 에러 예시: `SDK is built with ... while this compiler is ...`
-- 위 설정 후 `./install.sh` 재실행
+1. `Settings...` → `Notifications` → `Enable usage alerts` ON
+2. `Request permission` 클릭 → `Notifications: Allowed` 확인
+3. `Send test alert`로 배너가 뜨는지 확인
 
-### 7) 실행이 안 되거나 설치 경로가 꼬였을 때
+> `Denied`로 보이면 macOS **시스템 설정 → 알림 → AIUsageMonitor**에서 허용하세요.
 
-```bash
-rm -rf /Applications/AIUsageMonitor.app ~/Applications/AIUsageMonitor.app
-./install.sh
-```
-
-- 앱을 한 경로에만 설치해 중복 설치 혼선을 제거
-
-### 8) 아이콘이 바로 안 바뀔 때
-
-- 앱 종료 후 재설치
-- Finder/Dock 아이콘 캐시 지연 때문에 잠깐 이전 아이콘이 보일 수 있음
+---
 
 ## 인증 토큰 관리
 
-각 provider마다 로그인 유지 기간이 다릅니다. **Claude Code는 다른 provider보다 훨씬 짧아** 매일 재로그인이 필요할 수 있습니다.
+각 provider마다 로그인 유지 기간이 다릅니다.
 
 | Provider | 로그인 유지 기간 | 비고 |
 |---|---|---|
@@ -170,18 +131,15 @@ rm -rf /Applications/AIUsageMonitor.app ~/Applications/AIUsageMonitor.app
 | Copilot | GitHub 로그인 유지 | `gh auth login` |
 | Gemini | Google 로그인 유지 | `gemini auth` |
 
-### &#x26A0;&#xFE0F; Claude Code 매일 로그인 해결하기 (필독)
+### ⚠️ Claude Code: 매일 로그인이 풀린다면 (필독)
 
-Claude Code를 쓰다 보면 **하루에 한 번 이상 로그인이 풀리는 현상**이 있습니다.
-이는 Claude의 인증 토큰이 8~12시간마다 만료되고, macOS에서 자동 갱신이 제대로 되지 않기 때문입니다.
+Claude Code는 **8~12시간마다 인증이 만료**되고, macOS에서 자동 갱신이 실패하는 경우가 많습니다.
 ([관련 이슈](https://github.com/anthropics/claude-code/issues/19456))
 
-**장기 토큰 발급으로 해결 (권장):**
-
-`claude setup-token` 명령으로 장기 토큰을 발급받으면 매일 로그인할 필요가 없습니다.
+**`setup-token`으로 장기 토큰을 발급받으면 해결됩니다:**
 
 ```bash
-# 1. 터미널에서 장기 토큰 발급 (브라우저 인증 창이 열립니다)
+# 1. 장기 토큰 발급 (브라우저 인증 창이 열림)
 claude setup-token
 
 # 2. 출력된 토큰을 셸 설정에 등록
@@ -192,64 +150,103 @@ echo 'export CLAUDE_CODE_OAUTH_TOKEN="출력된_토큰"' >> ~/.zshrc && source ~
 echo 'export CLAUDE_CODE_OAUTH_TOKEN="출력된_토큰"' >> ~/.bashrc && source ~/.bashrc
 ```
 
-> **참고:** Pro/Max 구독자만 사용 가능합니다.
+> Pro/Max 구독자만 사용 가능합니다.
 
-## Requirements
+---
 
-| 항목 | 최소 요구사항 |
+## 단축키
+
+| 단축키 | 동작 |
 |---|---|
-| OS | macOS 14 이상 |
-| Xcode | 16 이상 (Swift 6 포함) |
-| Git | 설치 필요 |
-| 네트워크 | API 조회에 필요 |
+| `⌘R` | 새로고침 |
+| `⌘,` | 설정 |
+| `⌘D` | Claude 대시보드 |
+| `⌘Q` | 종료 |
 
-확인 명령:
+---
+
+## 업데이트 / 삭제
 
 ```bash
-swift --version
-git --version
+# 업데이트
+cd AI_Provider_Usage_monitor_for_mac
+git pull && ./install.sh
+
+# 삭제
+cd AI_Provider_Usage_monitor_for_mac
+./uninstall.sh
 ```
 
-## Development
+<details>
+<summary>수동 삭제</summary>
+
+```bash
+rm -rf /Applications/AIUsageMonitor.app ~/Applications/AIUsageMonitor.app
+defaults delete com.choihwanil.usagemonitor 2>/dev/null || true
+rm -rf ~/Library/Application\ Support/UsageMonitor
+rm -rf ~/Library/Caches/com.choihwanil.usagemonitor ~/Library/Caches/UsageMonitor
+```
+
+</details>
+
+---
+
+## 문제 해결
+
+| 증상 | 해결 |
+|---|---|
+| `No data`만 보임 | 터미널에서 provider 재로그인 후 `⌘R` |
+| Keychain 팝업 반복 | 팝업에서 `Always Allow` 선택 |
+| OpenRouter 안 뜸 | Settings에서 ON + API key 저장 |
+| 아이콘 안 바뀜 | 앱 종료 후 재설치 (Finder 캐시 지연) |
+| 설치 경로 꼬임 | `rm -rf /Applications/AIUsageMonitor.app ~/Applications/AIUsageMonitor.app` 후 재설치 |
+
+---
+
+## FAQ
+
+**Q. 왜 DMG 대신 소스 설치를 권장하나요?**
+
+다운로드된 DMG 앱은 macOS Gatekeeper에 의해 차단될 수 있습니다.
+로컬에서 직접 빌드하면 이 문제가 없습니다.
+
+---
+
+## 개발
 
 ```bash
 swift build
 swift test
 ./Scripts/package_app.sh
-GOOGLE_GENERATIVE_AI_API_KEY=... python3 Scripts/generate_icon_with_gemini.py --output Assets/icon-gemini-raw.png
 ```
 
-## FAQ
-
-### 왜 DMG 대신 소스 설치를 권장하나요?
-
-다운로드된 DMG 앱은 macOS Gatekeeper 정책 때문에 실행 차단될 수 있습니다.
-로컬에서 직접 빌드/설치하면 실행 문제가 가장 적습니다.
+---
 
 ## 변경 로그
 
 ### 2026-02-15 (최신)
 
-- Claude OAuth 토큰 만료 후 키체인 재읽기가 차단되던 버그 수정 (`notConfigured` 영구 고착 방지)
-- provider fetch 에러 시 stale 데이터 클리어 → status bar 검은 배경 오버레이 방지
-- 에러→복구 전환 시 trend 화살표(↑↓) 소실 방지
-- provider 에러 발생 시 status bar 아이콘-메뉴 동기화 누락 수정
+- Codex Spark 모델 사용량 추적 추가 (5h/7d 별도 표시)
+- Claude OAuth 토큰 만료 후 키체인 재읽기 차단 버그 수정
+- provider 에러 시 stale 데이터 클리어 (status bar 오버레이 방지)
+- 에러→복구 전환 시 trend 화살표 소실 방지
+- provider 에러 발생 시 status bar 아이콘-메뉴 동기화 수정
+- 인증 토큰 관리 가이드 추가 (Claude `setup-token` 해결법)
 
 <details>
 <summary>이전 변경 내역</summary>
 
 ### 2026-02-13
 
-- 앱 이름을 `AIUsageMonitor`로 통합 (product/bundle/script/UI 문자열 정리)
-- 패키징/설치 스크립트에서 실행 파일명과 앱 번들명 불일치 문제 수정
-- 패키징 스크립트에서 Xcode toolchain 자동 선택 + module cache 경로 보정
-- 앱 시작 시 캐시 폴더 처리 안정화 (실행/네트워크 캐시 오류 완화)
-- Codex 드롭다운 5h/7d 남은 시간 분리 표시 로직 보강
-- Codex 파서에 `rate_limit.primary_window`/`secondary_window` + `reset_at`/`reset_after_seconds` 지원 추가
-- Codex 사용량 파싱 오탐(100% 고정) 방지 로직 추가
-- 앱 아이콘 비율 확대 및 `.icns` 재생성
+- 앱 이름 `AIUsageMonitor`로 통합
+- 패키징/설치 스크립트 실행 파일명·앱 번들명 불일치 수정
+- Xcode toolchain 자동 선택 + module cache 경로 보정
+- 앱 시작 시 캐시 폴더 처리 안정화
+- Codex 5h/7d 남은 시간 분리 표시 로직 보강
+- Codex 파서에 `primary_window`/`secondary_window` + `reset_at`/`reset_after_seconds` 지원
+- Codex 사용량 파싱 오탐(100% 고정) 방지
+- 앱 아이콘 확대 및 `.icns` 재생성
 - status bar 게이지 바 모서리 둥글게 렌더링
-- README KR/EN 동기화 및 상단 아이콘 크기(256x256) 조정
 
 ### 2026-02-12
 
@@ -257,10 +254,11 @@ GOOGLE_GENERATIVE_AI_API_KEY=... python3 Scripts/generate_icon_with_gemini.py --
 - Swift 6 actor isolation 빌드 오류 수정
 - Codex auth 오류 수정
 - status bar 길이 조정
-- README 업데이트
 
 </details>
 
+---
+
 ## License
 
-MIT License
+[MIT License](LICENSE)
