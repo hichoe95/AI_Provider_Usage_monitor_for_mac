@@ -159,6 +159,41 @@ rm -rf /Applications/AIUsageMonitor.app ~/Applications/AIUsageMonitor.app
 - 앱 종료 후 재설치
 - Finder/Dock 아이콘 캐시 지연 때문에 잠깐 이전 아이콘이 보일 수 있음
 
+## 인증 토큰 관리
+
+각 provider마다 로그인 유지 기간이 다릅니다. **Claude Code는 다른 provider보다 훨씬 짧아** 매일 재로그인이 필요할 수 있습니다.
+
+| Provider | 로그인 유지 기간 | 비고 |
+|---|---|---|
+| **Claude Code** | **8~12시간** | 하루에 1~2회 재로그인 필요 |
+| Codex (OpenAI) | ~10일 | 자동 갱신 |
+| Copilot | GitHub 로그인 유지 | `gh auth login` |
+| Gemini | Google 로그인 유지 | `gemini auth` |
+
+### &#x26A0;&#xFE0F; Claude Code 매일 로그인 해결하기 (필독)
+
+Claude Code를 쓰다 보면 **하루에 한 번 이상 로그인이 풀리는 현상**이 있습니다.
+이는 Claude의 인증 토큰이 8~12시간마다 만료되고, macOS에서 자동 갱신이 제대로 되지 않기 때문입니다.
+([관련 이슈](https://github.com/anthropics/claude-code/issues/19456))
+
+**장기 토큰 발급으로 해결 (권장):**
+
+`claude setup-token` 명령으로 장기 토큰을 발급받으면 매일 로그인할 필요가 없습니다.
+
+```bash
+# 1. 터미널에서 장기 토큰 발급 (브라우저 인증 창이 열립니다)
+claude setup-token
+
+# 2. 출력된 토큰을 셸 설정에 등록
+#    zsh (기본 셸):
+echo 'export CLAUDE_CODE_OAUTH_TOKEN="출력된_토큰"' >> ~/.zshrc && source ~/.zshrc
+
+#    bash:
+echo 'export CLAUDE_CODE_OAUTH_TOKEN="출력된_토큰"' >> ~/.bashrc && source ~/.bashrc
+```
+
+> **참고:** Pro/Max 구독자만 사용 가능합니다.
+
 ## Requirements
 
 | 항목 | 최소 요구사항 |

@@ -160,6 +160,41 @@ rm -rf /Applications/AIUsageMonitor.app ~/Applications/AIUsageMonitor.app
 - Quit the app and reinstall
 - Finder/Dock icon cache delay can temporarily show the previous icon
 
+## Token Lifecycle
+
+Each provider has a different login session duration. **Claude Code is significantly shorter than others**, so you may need to re-login daily.
+
+| Provider | Login Duration | Notes |
+|---|---|---|
+| **Claude Code** | **8–12 hours** | May require re-login 1–2 times a day |
+| Codex (OpenAI) | ~10 days | Auto-refresh |
+| Copilot | GitHub session | `gh auth login` |
+| Gemini | Google session | `gemini auth` |
+
+### &#x26A0;&#xFE0F; Fix Claude Code Daily Re-login (Must Read)
+
+If you use Claude Code, **your login may expire once or more per day**.
+This happens because Claude's auth token expires every 8–12 hours and auto-renewal often fails on macOS.
+([Related issue](https://github.com/anthropics/claude-code/issues/19456))
+
+**Fix: Generate a long-lived token (Recommended)**
+
+Run `claude setup-token` to get a long-lived token so you don't have to re-login daily.
+
+```bash
+# 1. Generate a long-lived token (opens browser for authentication)
+claude setup-token
+
+# 2. Add the token to your shell config
+#    zsh (default on macOS):
+echo 'export CLAUDE_CODE_OAUTH_TOKEN="your_token_here"' >> ~/.zshrc && source ~/.zshrc
+
+#    bash:
+echo 'export CLAUDE_CODE_OAUTH_TOKEN="your_token_here"' >> ~/.bashrc && source ~/.bashrc
+```
+
+> **Note:** Only available for Pro/Max subscribers.
+
 ## Requirements
 
 | Item | Minimum |
