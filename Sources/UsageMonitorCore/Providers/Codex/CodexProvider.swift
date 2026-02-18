@@ -727,11 +727,46 @@ public struct CodexProvider: Provider {
         let primaryWindow = value(for: ["primary_window", "primaryWindow"], in: parent)
         let secondaryWindow = value(for: ["secondary_window", "secondaryWindow"], in: parent)
 
-        let sessionUsage = primaryWindow.flatMap { strictWindowUsagePercent(in: $0) }
-        let weeklyUsage = secondaryWindow.flatMap { strictWindowUsagePercent(in: $0) }
+        let allWindows: [(Any, Double?)] = [primaryWindow, secondaryWindow].compactMap { window -> (Any, Double?)? in
+            guard let w = window else { return nil }
+            let durationSec = (w as? [String: Any]).flatMap {
+                number(for: ["limit_window_seconds", "limitWindowSeconds", "window_seconds"], in: $0)
+            }
+            return (w, durationSec)
+        }
 
-        let sessionResetDate = primaryWindow.flatMap { resetDate(in: $0) }
-        let weeklyResetDate = secondaryWindow.flatMap { resetDate(in: $0) }
+        var sessionUsage: Double?
+        var weeklyUsage: Double?
+        var sessionResetDate: Date?
+        var weeklyResetDate: Date?
+
+        for (window, durationSec) in allWindows {
+            let usage = strictWindowUsagePercent(in: window)
+            let reset = resetDate(in: window)
+
+            if let sec = durationSec {
+                // 21600s = 6 hours: session threshold
+                if sec <= 21_600 {
+                    if sessionUsage == nil {
+                        sessionUsage = usage
+                        sessionResetDate = reset
+                    }
+                } else {
+                    if weeklyUsage == nil {
+                        weeklyUsage = usage
+                        weeklyResetDate = reset
+                    }
+                }
+            } else {
+                if sessionUsage == nil && window as AnyObject === primaryWindow as AnyObject {
+                    sessionUsage = usage
+                    sessionResetDate = reset
+                } else if weeklyUsage == nil {
+                    weeklyUsage = usage
+                    weeklyResetDate = reset
+                }
+            }
+        }
 
         if sessionUsage == nil && weeklyUsage == nil {
             return nil
