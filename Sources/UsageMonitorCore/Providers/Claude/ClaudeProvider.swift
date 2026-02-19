@@ -15,6 +15,10 @@ public actor ClaudeProvider: Provider {
     public init() {}
     
     public nonisolated var isAvailable: Bool {
+        if environmentOAuthToken() != nil {
+            return true
+        }
+
         let home = FileManager.default.homeDirectoryForCurrentUser
         for filename in [".claude/.credentials.json", ".claude/auth.json"] {
             let path = home.appendingPathComponent(filename)
@@ -181,21 +185,101 @@ public actor ClaudeProvider: Provider {
     }
 
     private func readOAuth() -> ClaudeOAuthResult? {
+        var candidates: [ClaudeOAuthResult] = []
+
+        if let envToken = environmentOAuthToken() {
+            candidates.append(ClaudeOAuthResult(accessToken: envToken, refreshToken: nil, expiresAt: nil))
+        }
+
         let home = FileManager.default.homeDirectoryForCurrentUser
         for filename in [".claude/.credentials.json", ".claude/auth.json"] {
             let path = home.appendingPathComponent(filename)
             if let data = try? Data(contentsOf: path),
                let result = ClaudeTokenExtractor.extract(from: data) {
-                return result
+                candidates.append(result)
             }
         }
 
-        guard !didAttemptInteractiveKeychainLookup else {
-            return nil
+        if !didAttemptInteractiveKeychainLookup {
+            didAttemptInteractiveKeychainLookup = true
+            if let specific = extractFromKeychain(account: primaryKeychainAccount, allowPrompt: true) {
+                candidates.append(specific)
+            } else if let any = extractFromKeychainAny(allowPrompt: true) {
+                candidates.append(any)
+            }
         }
 
-        didAttemptInteractiveKeychainLookup = true
-        return extractFromKeychainAny(allowPrompt: true)
+        return bestOAuthCandidate(from: candidates)
+    }
+
+    private static let envKey = "CLAUDE_CODE_OAUTH_TOKEN"
+
+    nonisolated private func environmentOAuthToken() -> String? {
+        if let token = ProcessInfo.processInfo.environment[Self.envKey]?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+           !token.isEmpty {
+            return token
+        }
+
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        let shellConfigs = [
+            "\(home)/.zshrc",
+            "\(home)/.zprofile",
+            "\(home)/.bashrc",
+            "\(home)/.bash_profile",
+        ]
+
+        for configPath in shellConfigs {
+            guard let content = try? String(contentsOfFile: configPath, encoding: .utf8) else {
+                continue
+            }
+            if let token = parseExportedValue(Self.envKey, from: content) {
+                return token
+            }
+        }
+
+        return nil
+    }
+
+    nonisolated private func parseExportedValue(_ key: String, from content: String) -> String? {
+        for line in content.components(separatedBy: .newlines) {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.hasPrefix("#") else { continue }
+
+            let needle = "\(key)="
+            guard let range = trimmed.range(of: needle) else { continue }
+
+            var value = String(trimmed[range.upperBound...])
+            if let commentRange = findUnquotedComment(in: value) {
+                value = String(value[..<commentRange])
+            }
+            value = value.trimmingCharacters(in: .whitespaces)
+
+            if (value.hasPrefix("\"") && value.hasSuffix("\""))
+                || (value.hasPrefix("'") && value.hasSuffix("'")) {
+                value = String(value.dropFirst().dropLast())
+            }
+
+            let final = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !final.isEmpty {
+                return final
+            }
+        }
+        return nil
+    }
+
+    nonisolated private func findUnquotedComment(in text: String) -> String.Index? {
+        var inSingle = false
+        var inDouble = false
+        for idx in text.indices {
+            switch text[idx] {
+            case "'" where !inDouble: inSingle.toggle()
+            case "\"" where !inSingle: inDouble.toggle()
+            case "#" where !inSingle && !inDouble: return idx
+            default: break
+            }
+        }
+        return nil
     }
 
     nonisolated private func bestOAuthCandidate(from candidates: [ClaudeOAuthResult]) -> ClaudeOAuthResult? {
