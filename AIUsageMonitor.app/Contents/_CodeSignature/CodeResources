@@ -16,6 +16,10 @@
 		<data>
 		LqHWGwCqny6ta4TlXdLSrqMggpo=
 		</data>
+		<key>Resources/UsageMonitor_UsageMonitor.bundle/codex_statusbar_logo.png</key>
+		<data>
+		4Tp7hrDxEpWBxqQj35d3jeG5c4w=
+		</data>
 		<key>Resources/UsageMonitor_UsageMonitor.bundle/copilot_logo.png</key>
 		<data>
 		f8aUkoEQj9MN3DYjvswO/BDwwVs=
@@ -26,7 +30,7 @@
 		</data>
 		<key>Resources/UsageMonitor_UsageMonitor.bundle/openrouter_logo.png</key>
 		<data>
-		BGA6UicYc5KM0Xnx2bU2zyzL7+k=
+		XfxSZn7p5JLj0o9iLa1yWHT+NuM=
 		</data>
 	</dict>
 	<key>files2</key>
@@ -52,6 +56,13 @@
 			ijMxL2uxfB7d34+df7rAnOHR1pfWYB83Inr6h56UxS4=
 			</data>
 		</dict>
+		<key>Resources/UsageMonitor_UsageMonitor.bundle/codex_statusbar_logo.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			x59YGvjXQdIPRynWopVpD6s2clOLmlcYmUo1S1+5+jA=
+			</data>
+		</dict>
 		<key>Resources/UsageMonitor_UsageMonitor.bundle/copilot_logo.png</key>
 		<dict>
 			<key>hash2</key>
@@ -70,7 +81,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			hkQQ9v8sPfzWOEQKaJjDO1k4HsfKyA9QmqS7iS4Uau0=
+			MvA8Fvoo5/VYRswYjLryDsCljj/wciZHDGikO7V5FVA=
 			</data>
 		</dict>
 	</dict>
