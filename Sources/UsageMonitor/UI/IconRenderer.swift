@@ -137,7 +137,7 @@ enum IconRenderer {
         context: CGContext,
         totalHeight: CGFloat
     ) {
-        let iconSize: CGFloat = 17
+        let iconSize: CGFloat = 15
         let iconRect = CGRect(
             x: x,
             y: (totalHeight - iconSize) / 2,
@@ -237,7 +237,7 @@ enum IconRenderer {
         context: CGContext,
         totalHeight: CGFloat
     ) {
-        let iconSize: CGFloat = 17
+        let iconSize: CGFloat = 15
         let iconRect = CGRect(
             x: x,
             y: (totalHeight - iconSize) / 2,
