@@ -224,7 +224,13 @@ swift test
 
 ## 변경 로그
 
-### 2026-02-15 (최신)
+### 2026-02-20 (최신)
+
+- Codex status bar 아이콘을 ChatGPT 블로섬 로고로 교체 (드롭다운은 기존 로고 유지)
+- OpenRouter 로고를 lobehub Avatar 스타일로 업데이트
+
+<details>
+<summary>2026-02-15</summary>
 
 - Codex Spark 모델 사용량 추적 추가 (5h/7d 별도 표시)
 - Claude OAuth 토큰 만료 후 키체인 재읽기 차단 버그 수정
@@ -233,10 +239,10 @@ swift test
 - provider 에러 발생 시 status bar 아이콘-메뉴 동기화 수정
 - 인증 토큰 관리 가이드 추가 (Claude `setup-token` 해결법)
 
-<details>
-<summary>이전 변경 내역</summary>
+</details>
 
-### 2026-02-13
+<details>
+<summary>2026-02-13</summary>
 
 - 앱 이름 `AIUsageMonitor`로 통합
 - 패키징/설치 스크립트 실행 파일명·앱 번들명 불일치 수정
@@ -248,7 +254,10 @@ swift test
 - 앱 아이콘 확대 및 `.icns` 재생성
 - status bar 게이지 바 모서리 둥글게 렌더링
 
-### 2026-02-12
+</details>
+
+<details>
+<summary>2026-02-12</summary>
 
 - release 패키징 정리
 - Swift 6 actor isolation 빌드 오류 수정
