@@ -15,7 +15,7 @@ struct OpenRouterSegmentData {
 
 enum StatusBarIcon {
     static var claude: NSImage? { ProviderLogo.claude }
-    static var codex: NSImage? { ProviderLogo.codex }
+    static var codex: NSImage? { ProviderLogo.load("codex_statusbar_logo") }
     static var openRouter: NSImage? { ProviderLogo.openRouter }
     static var copilot: NSImage? { ProviderLogo.copilot }
     static var gemini: NSImage? { ProviderLogo.gemini }
