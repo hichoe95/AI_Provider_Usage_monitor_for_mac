@@ -228,6 +228,7 @@ swift test
 
 - Codex status bar 아이콘을 ChatGPT 블로섬 로고로 교체 (드롭다운은 기존 로고 유지)
 - OpenRouter 로고를 lobehub Avatar 스타일로 업데이트
+- status bar provider 아이콘 크기 축소 (17→15pt, ~12%)
 
 <details>
 <summary>2026-02-15</summary>

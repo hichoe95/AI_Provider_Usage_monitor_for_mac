@@ -24,12 +24,21 @@ Files:
 Files:
 - `Sources/UsageMonitor/Resources/openrouter_logo.png`
 
+#### 3) style(statusbar): reduce provider icon size in status bar
+
+status bar의 provider 아이콘 크기를 17pt → 15pt로 축소 (~12%).
+`drawProviderSegment`, `drawOpenRouterSegment` 모두 적용.
+
+Files:
+- `Sources/UsageMonitor/UI/IconRenderer.swift`
+
 ### Planned Commit Units
 
 1. `feat(icons): replace Codex status bar icon with ChatGPT blossom logo`
 2. `feat(icons): update OpenRouter logo to lobehub avatar style`
 3. `chore(build): update app bundle with new icon assets`
 4. `docs: update changelog for 2026-02-20 icon updates`
+5. `style(statusbar): reduce provider icon size in status bar`
 
 ---
 
