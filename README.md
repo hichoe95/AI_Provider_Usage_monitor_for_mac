@@ -126,31 +126,21 @@ gemini auth         # Gemini
 
 | Provider | 로그인 유지 기간 | 비고 |
 |---|---|---|
-| **Claude Code** | **8~12시간** | 하루에 1~2회 재로그인 필요 |
+| **Claude Code** | **자동 갱신** | `claude login` 필수 (아래 참고) |
 | Codex (OpenAI) | ~10일 | 자동 갱신 |
 | Copilot | GitHub 로그인 유지 | `gh auth login` |
 | Gemini | Google 로그인 유지 | `gemini auth` |
 
-### ⚠️ Claude Code: 매일 로그인이 풀린다면 (필독)
+### Claude Code: 자동 토큰 갱신
 
-Claude Code는 **8~12시간마다 인증이 만료**되고, macOS에서 자동 갱신이 실패하는 경우가 많습니다.
-([관련 이슈](https://github.com/anthropics/claude-code/issues/19456))
-
-**`setup-token`으로 장기 토큰을 발급받으면 해결됩니다:**
-
+`claude login`으로 로그인하면 **refresh token**이 함께 저장되어,
+앱이 만료된 토큰을 자동으로 갱신합니다.
 ```bash
-# 1. 장기 토큰 발급 (브라우저 인증 창이 열림)
-claude setup-token
-
-# 2. 출력된 토큰을 셸 설정에 등록
-#    zsh (기본 셸):
-echo 'export CLAUDE_CODE_OAUTH_TOKEN="출력된_토큰"' >> ~/.zshrc && source ~/.zshrc
-
-#    bash:
-echo 'export CLAUDE_CODE_OAUTH_TOKEN="출력된_토큰"' >> ~/.bashrc && source ~/.bashrc
+claude login    # 브라우저 인증 → refresh token 자동 저장
 ```
 
-> Pro/Max 구독자만 사용 가능합니다.
+> **`setup-token`은 사용하지 마세요.** 8시간짜리 access token만 발급되며 자동 갱신이 불가합니다.
+> 반드시 `claude login`을 사용하세요. Pro/Max 구독자만 해당됩니다.
 
 ---
 
@@ -224,8 +214,13 @@ swift test
 
 ## 변경 로그
 
-### 2026-02-20 (최신)
+### 2026-02-23 (최신)
 
+* Claude OAuth 토큰 자동 갱신 개선: 만료 시 credential 파일/키체인 재읽기 → 자체 refresh → 인터랙티브 키체인 3단계 복구
+* Claude Code CLI와의 refresh token 경쟁 조건(race condition) 수정
+* `setup-token` 대신 `claude login` 기반 자동 갱신으로 전환
+
+### 2026-02-20
 - Codex status bar 아이콘을 ChatGPT 블로섬 로고로 교체 (드롭다운은 기존 로고 유지)
 - OpenRouter 로고를 lobehub Avatar 스타일로 업데이트
 - status bar provider 아이콘 크기 축소 (17→15pt, ~12%)

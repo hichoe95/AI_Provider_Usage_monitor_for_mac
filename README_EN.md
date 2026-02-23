@@ -126,31 +126,21 @@ Each provider has a different login session duration.
 
 | Provider | Login Duration | Notes |
 |---|---|---|
-| **Claude Code** | **8–12 hours** | May require re-login 1–2 times a day |
+| **Claude Code** | **Auto-refresh** | `claude login` required (see below) |
 | Codex (OpenAI) | ~10 days | Auto-refresh |
 | Copilot | GitHub session | `gh auth login` |
 | Gemini | Google session | `gemini auth` |
 
-### ⚠️ Claude Code: Fix Daily Re-login (Must Read)
+### Claude Code: Automatic Token Refresh
 
-Claude Code's auth token **expires every 8–12 hours**, and auto-renewal often fails on macOS.
-([Related issue](https://github.com/anthropics/claude-code/issues/19456))
-
-**Generate a long-lived token to fix this:**
-
+When you log in with `claude login`, a **refresh token** is saved alongside the access token.
+The app automatically refreshes expired tokens using this refresh token.
 ```bash
-# 1. Generate a long-lived token (opens browser for auth)
-claude setup-token
-
-# 2. Add the token to your shell config
-#    zsh (default on macOS):
-echo 'export CLAUDE_CODE_OAUTH_TOKEN="your_token_here"' >> ~/.zshrc && source ~/.zshrc
-
-#    bash:
-echo 'export CLAUDE_CODE_OAUTH_TOKEN="your_token_here"' >> ~/.bashrc && source ~/.bashrc
+claude login    # Browser auth → refresh token saved automatically
 ```
 
-> Only available for Pro/Max subscribers.
+> **Do not use `setup-token`.** It only generates an 8-hour access token with no auto-refresh.
+> Always use `claude login`. Only available for Pro/Max subscribers.
 
 ---
 
@@ -224,8 +214,19 @@ swift test
 
 ## Changelog
 
-### 2026-02-15 (Latest)
+### 2026-02-23 (Latest)
 
+* Improved Claude OAuth auto-refresh: 3-step recovery on expiry (re-read credential files/keychain → self-refresh → interactive keychain)
+* Fixed refresh token race condition between app and Claude Code CLI
+* Switched from `setup-token` to `claude login` based auto-refresh
+
+### 2026-02-20
+
+* Replaced Codex status bar icon with ChatGPT blossom logo (dropdown keeps original)
+* Updated OpenRouter logo to lobehub Avatar style
+* Reduced status bar provider icon size (17→15pt, ~12%)
+
+### 2026-02-15
 - Added Codex Spark model usage tracking (separate 5h/7d display)
 - Fixed Claude OAuth token refresh permanently blocking Keychain re-read
 - Clear stale provider data on fetch error (prevents status bar overlay)

@@ -56,34 +56,54 @@ public actor ClaudeProvider: Provider {
             guard allowRetry else {
                 throw ProviderError.tokenExpired
             }
-            do {
-                if let refreshed = try await refreshOAuthIfPossible(from: oauth) {
-                    cachedOAuth = refreshed
-                    return try await fetchUsage(using: refreshed, allowRetry: false)
-                }
-            } catch {
-                // Fall back to reloading credentials from keychain/files.
-            }
-            resetCachedState()
-            let freshOAuth = try getFreshOAuth()
-            return try await fetchUsage(using: freshOAuth, allowRetry: false)
+            let recovered = try await recoverExpiredToken(from: oauth)
+            return try await fetchUsage(using: recovered, allowRetry: false)
         }
 
         do {
             return try await callUsageAPI(token: oauth.accessToken)
         } catch ProviderError.tokenExpired where allowRetry {
-            do {
-                if let refreshed = try await refreshOAuthIfPossible(from: oauth) {
-                    cachedOAuth = refreshed
-                    return try await fetchUsage(using: refreshed, allowRetry: false)
-                }
-            } catch {
-                // Fall back to reloading credentials from keychain/files.
-            }
-            resetCachedState()
-            let freshOAuth = try getFreshOAuth()
-            return try await fetchUsage(using: freshOAuth, allowRetry: false)
+            let recovered = try await recoverExpiredToken(from: oauth)
+            return try await fetchUsage(using: recovered, allowRetry: false)
         }
+    }
+
+    /// Attempt to recover from an expired or server-rejected token.
+    ///
+    /// Recovery order is critical to avoid a race condition with Claude Code CLI:
+    ///   1. Re-read credential files & keychain **non-interactively** — the CLI may
+    ///      have already refreshed and written a fresh token in the background.
+    ///   2. Attempt our own token refresh only if step 1 found nothing fresh.
+    ///      Anthropic's refresh tokens are **single-use**: consuming one immediately
+    ///      revokes the previous value. Refreshing before checking files risks
+    ///      invalidating a token the CLI is still relying on.
+    ///   3. Full interactive keychain lookup as a last resort (may prompt the user).
+    private func recoverExpiredToken(from oauth: ClaudeOAuthResult) async throws -> ClaudeOAuthResult {
+        // Step 1: Non-interactive re-read (files + keychain, no UI prompt).
+        // Claude Code CLI writes refreshed tokens to ~/.claude/.credentials.json.
+        if let fresh = readOAuth(interactiveKeychain: false), !fresh.isExpired {
+            cachedOAuth = fresh
+            return fresh
+        }
+
+        // Step 2: All sources still stale — attempt our own token refresh.
+        do {
+            if let refreshed = try await refreshOAuthIfPossible(from: oauth) {
+                cachedOAuth = refreshed
+                return refreshed
+            }
+        } catch {
+            // Refresh failed (e.g. refresh token already consumed by CLI).
+        }
+
+        // Step 3: Full reset + interactive keychain as last resort.
+        resetCachedState()
+        if let fresh = readOAuth(), !fresh.isExpired {
+            cachedOAuth = fresh
+            return fresh
+        }
+
+        throw ProviderError.tokenExpired
     }
 
     /// Clear both the cached OAuth token and the Keychain lookup guard so that
@@ -94,19 +114,24 @@ public actor ClaudeProvider: Provider {
     }
 
     private func getCachedOrFreshOAuth() throws -> ClaudeOAuthResult {
-        if let cachedOAuth {
-            return cachedOAuth
+        if let cached = cachedOAuth {
+            if !cached.isExpired {
+                return cached
+            }
+
+            // Cached token expired. Quick non-interactive re-read from files
+            // and keychain — Claude Code CLI may have refreshed in the background.
+            if let fresh = readOAuth(interactiveKeychain: false), !fresh.isExpired {
+                cachedOAuth = fresh
+                return fresh
+            }
+
+            // Files also stale — return expired cache and let fetchUsage() handle
+            // the full recovery flow (refresh attempt → interactive keychain).
+            return cached
         }
 
-        guard let oauth = readOAuth() else {
-            throw ProviderError.notConfigured
-        }
-
-        cachedOAuth = oauth
-        return oauth
-    }
-
-    private func getFreshOAuth() throws -> ClaudeOAuthResult {
+        // No cache at all (first call). Full read including interactive keychain.
         guard let oauth = readOAuth() else {
             throw ProviderError.notConfigured
         }
@@ -184,9 +209,8 @@ public actor ClaudeProvider: Provider {
         return formatter.date(from: value)
     }
 
-    private func readOAuth() -> ClaudeOAuthResult? {
+    private func readOAuth(interactiveKeychain: Bool = true) -> ClaudeOAuthResult? {
         var candidates: [ClaudeOAuthResult] = []
-
         if let envToken = environmentOAuthToken() {
             candidates.append(ClaudeOAuthResult(accessToken: envToken, refreshToken: nil, expiresAt: nil))
         }
@@ -199,16 +223,18 @@ public actor ClaudeProvider: Provider {
                 candidates.append(result)
             }
         }
-
-        if !didAttemptInteractiveKeychainLookup {
+        if interactiveKeychain && !didAttemptInteractiveKeychainLookup {
             didAttemptInteractiveKeychainLookup = true
             if let specific = extractFromKeychain(account: primaryKeychainAccount, allowPrompt: true) {
                 candidates.append(specific)
             } else if let any = extractFromKeychainAny(allowPrompt: true) {
                 candidates.append(any)
             }
+        } else {
+            if let specific = extractFromKeychain(account: primaryKeychainAccount, allowPrompt: false) {
+                candidates.append(specific)
+            }
         }
-
         return bestOAuthCandidate(from: candidates)
     }
 
