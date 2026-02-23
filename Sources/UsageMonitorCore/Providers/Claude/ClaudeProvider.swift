@@ -225,15 +225,9 @@ public actor ClaudeProvider: Provider {
         }
         if interactiveKeychain && !didAttemptInteractiveKeychainLookup {
             didAttemptInteractiveKeychainLookup = true
-            if let specific = extractFromKeychain(account: primaryKeychainAccount, allowPrompt: true) {
-                candidates.append(specific)
-            } else if let any = extractFromKeychainAny(allowPrompt: true) {
-                candidates.append(any)
-            }
+            candidates.append(contentsOf: extractAllFromKeychain(allowPrompt: true))
         } else {
-            if let specific = extractFromKeychain(account: primaryKeychainAccount, allowPrompt: false) {
-                candidates.append(specific)
-            }
+            candidates.append(contentsOf: extractAllFromKeychain(allowPrompt: false))
         }
         return bestOAuthCandidate(from: candidates)
     }
@@ -334,14 +328,30 @@ public actor ClaudeProvider: Provider {
         return extractOAuthFromQuery(query, allowPrompt: allowPrompt)
     }
 
-    nonisolated private func extractFromKeychainAny(allowPrompt: Bool) -> ClaudeOAuthResult? {
-        let query: [String: Any] = [
+    nonisolated private func extractAllFromKeychain(allowPrompt: Bool) -> [ClaudeOAuthResult] {
+        var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: "Claude Code-credentials",
             kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitAll,
         ]
+        if !allowPrompt {
+            let context = LAContext()
+            context.interactionNotAllowed = true
+            query[kSecUseAuthenticationContext as String] = context
+        }
 
-        return extractOAuthFromQuery(query, allowPrompt: allowPrompt)
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        guard status == errSecSuccess else { return [] }
+
+        if let dataArray = result as? [Data] {
+            return dataArray.compactMap { ClaudeTokenExtractor.extract(from: $0) }
+        } else if let data = result as? Data,
+                  let extracted = ClaudeTokenExtractor.extract(from: data) {
+            return [extracted]
+        }
+        return []
     }
 
     nonisolated private func extractOAuthFromQuery(
