@@ -223,11 +223,12 @@ public actor ClaudeProvider: Provider {
                 candidates.append(result)
             }
         }
-        if interactiveKeychain && !didAttemptInteractiveKeychainLookup {
-            didAttemptInteractiveKeychainLookup = true
-            candidates.append(contentsOf: extractAllFromKeychain(allowPrompt: true))
-        } else {
-            candidates.append(contentsOf: extractAllFromKeychain(allowPrompt: false))
+        let prompt = interactiveKeychain && !didAttemptInteractiveKeychainLookup
+        if prompt { didAttemptInteractiveKeychainLookup = true }
+        for account in Set([primaryKeychainAccount, NSUserName()]) {
+            if let result = extractFromKeychain(account: account, allowPrompt: prompt) {
+                candidates.append(result)
+            }
         }
         return bestOAuthCandidate(from: candidates)
     }
@@ -328,31 +329,6 @@ public actor ClaudeProvider: Provider {
         return extractOAuthFromQuery(query, allowPrompt: allowPrompt)
     }
 
-    nonisolated private func extractAllFromKeychain(allowPrompt: Bool) -> [ClaudeOAuthResult] {
-        var query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "Claude Code-credentials",
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitAll,
-        ]
-        if !allowPrompt {
-            let context = LAContext()
-            context.interactionNotAllowed = true
-            query[kSecUseAuthenticationContext as String] = context
-        }
-
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-        guard status == errSecSuccess else { return [] }
-
-        if let dataArray = result as? [Data] {
-            return dataArray.compactMap { ClaudeTokenExtractor.extract(from: $0) }
-        } else if let data = result as? Data,
-                  let extracted = ClaudeTokenExtractor.extract(from: data) {
-            return [extracted]
-        }
-        return []
-    }
 
     nonisolated private func extractOAuthFromQuery(
         _ baseQuery: [String: Any],
