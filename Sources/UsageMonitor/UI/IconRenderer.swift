@@ -19,6 +19,7 @@ enum StatusBarIcon {
     static var openRouter: NSImage? { ProviderLogo.openRouter }
     static var copilot: NSImage? { ProviderLogo.copilot }
     static var gemini: NSImage? { ProviderLogo.gemini }
+    static var kimi: NSImage? { ProviderLogo.load("kimi_logo") }
 }
 
 @MainActor
@@ -84,6 +85,7 @@ enum IconRenderer {
     static func renderDetailedProvidersIcon(
         barProviders: [ProviderSegmentData],
         openRouter: OpenRouterSegmentData?,
+        kimi: OpenRouterSegmentData? = nil,
         isStale: Bool = false
     ) -> NSImage {
         let providerWidth: CGFloat = 40
@@ -92,14 +94,20 @@ enum IconRenderer {
         let rightPad: CGFloat = 2
         let height: CGFloat = 22
 
-        let providersWidth: CGFloat = barProviders.isEmpty
+        let firstProviderWidth: CGFloat = barProviders.isEmpty ? 0 : providerWidth
+        let remainingProvidersWidth: CGFloat = barProviders.count <= 1
             ? 0
-            : CGFloat(barProviders.count) * providerWidth + CGFloat(max(0, barProviders.count - 1)) * providerSpacing
+            : CGFloat(barProviders.count - 1) * providerWidth + CGFloat(max(0, barProviders.count - 2)) * providerSpacing
 
         let openRouterWidth = openRouter.map(openRouterSegmentWidth) ?? 0
+        let kimiWidth = kimi.map(openRouterSegmentWidth) ?? 0
 
-        let separatorWidth: CGFloat = (!barProviders.isEmpty && openRouter != nil) ? 5 : 0
-        let width = max(18, leftPad + providersWidth + separatorWidth + openRouterWidth + rightPad)
+        // Separators: 2px each between segments
+        // Order: First provider -> Kimi -> Remaining providers -> OpenRouter
+        let firstToKimiSep: CGFloat = (!barProviders.isEmpty && kimi != nil) ? 2 : 0
+        let kimiToRestSep: CGFloat = (kimi != nil && barProviders.count > 1) ? 2 : 0
+        let restToOpenRouterSep: CGFloat = ((barProviders.count > 1 || kimi != nil) && openRouter != nil) ? 2 : 0
+        let width = max(18, leftPad + firstProviderWidth + firstToKimiSep + kimiWidth + kimiToRestSep + remainingProvidersWidth + restToOpenRouterSep + openRouterWidth + rightPad)
 
         let image = NSImage(size: NSSize(width: width, height: height))
         image.lockFocus()
@@ -109,13 +117,31 @@ enum IconRenderer {
         context.fill(CGRect(x: 0, y: 0, width: width, height: height))
 
         var x = leftPad
-        for provider in barProviders {
+
+        // Render first provider (Claude) if exists
+        if let firstProvider = barProviders.first {
+            drawProviderSegment(firstProvider, atX: x, context: context, totalHeight: height)
+            x += providerWidth + providerSpacing
+        }
+
+        // Render Kimi after Claude
+        if let kimi {
+            if barProviders.first != nil {
+                x += 2
+            }
+            drawOpenRouterSegment(kimi, atX: x, context: context, totalHeight: height)
+            x += openRouterSegmentWidth(kimi)
+        }
+
+        // Render remaining providers (Codex, Copilot, Gemini)
+        for provider in barProviders.dropFirst() {
             drawProviderSegment(provider, atX: x, context: context, totalHeight: height)
             x += providerWidth + providerSpacing
         }
 
+        // Render OpenRouter at the end
         if let openRouter {
-            if !barProviders.isEmpty {
+            if barProviders.count > 1 || kimi != nil {
                 x += 2
             }
             drawOpenRouterSegment(openRouter, atX: x, context: context, totalHeight: height)

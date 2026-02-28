@@ -8,6 +8,8 @@ enum BrandColor {
     static let gemini = NSColor(red: 0.30, green: 0.42, blue: 0.95, alpha: 1)       // #4D6BF3
     static let openRouter = NSColor(red: 0.39, green: 0.40, blue: 0.95, alpha: 1)   // #6366F1
     static let openRouterStrong = NSColor(red: 0.06, green: 0.50, blue: 0.95, alpha: 1)
+    static let kimi = NSColor(red: 0.118, green: 0.565, blue: 1.0, alpha: 1)
+    static let kimiStrong = NSColor(red: 0.102, green: 0.541, blue: 1.0, alpha: 1)
 }
 
 enum ProviderLogo {
@@ -26,6 +28,7 @@ enum ProviderLogo {
     static var copilot: NSImage? { load("copilot_logo") }
     static var gemini: NSImage? { load("gemini_logo") }
     static var openRouter: NSImage? { load("openrouter_logo") ?? load("openrouter") }
+    static var kimi: NSImage? { load("kimi_dropdown_logo") ?? load("kimi_logo") }
 }
 
 private final class TimestampView: NSView {
@@ -102,6 +105,7 @@ enum MenuBuilder {
         copilotData: UsageData?,
         geminiData: UsageData?,
         openRouterData: UsageData?,
+        kimiData: UsageData?,
         sessionTrends: [String: Double],
         isLoading: Bool,
         providerErrors: [String: String],
@@ -123,7 +127,7 @@ enum MenuBuilder {
         let copilotEnabled = isProviderEnabled("copilotEnabled", default: false)
         let geminiEnabled = isProviderEnabled("geminiEnabled", default: false)
         let openRouterEnabled = isProviderEnabled("openRouterEnabled", default: false)
-
+        let kimiEnabled = isProviderEnabled("kimiEnabled", default: false)
         if isLoading {
             let item = NSMenuItem(title: "Refreshing...", action: nil, keyEquivalent: "")
             item.isEnabled = false
@@ -133,7 +137,7 @@ enum MenuBuilder {
 
         var hasProviderSection = false
 
-        let anyProviderEnabled = claudeEnabled || codexEnabled || copilotEnabled || geminiEnabled || openRouterEnabled
+        let anyProviderEnabled = claudeEnabled || codexEnabled || copilotEnabled || geminiEnabled || openRouterEnabled || kimiEnabled
         if anyProviderEnabled {
             addHeaderItem(to: menu, title: "PROVIDERS")
         }
@@ -144,6 +148,13 @@ enum MenuBuilder {
                addDashboardItem(to: menu, urlString: "https://claude.ai/settings/usage", keyEquivalent: "d")
                hasProviderSection = true
            }
+
+         if kimiEnabled {
+             if hasProviderSection { menu.addItem(NSMenuItem.separator()) }
+             addKimiItem(to: menu, data: kimiData, error: providerErrors["Kimi"])
+             addDashboardItem(to: menu, urlString: "https://www.kimi.com/code/console")
+             hasProviderSection = true
+         }
 
           if codexEnabled {
               if hasProviderSection { menu.addItem(NSMenuItem.separator()) }
@@ -247,6 +258,19 @@ enum MenuBuilder {
         item.view = OpenRouterGaugeView(remainingCredits: data?.remainingCredits,
                                         error: error, hasError: error != nil, width: menuWidth)
         menu.addItem(item)
+    }
+
+    @MainActor
+    private static func addKimiItem(to menu: NSMenu, data: UsageData?, error: String?) {
+        addGaugeItem(
+            to: menu,
+            name: "Kimi",
+            logo: ProviderLogo.kimi,
+            color: BrandColor.kimi,
+            data: data,
+            sessionTrend: nil,
+            error: error
+        )
     }
 
      @MainActor

@@ -13,6 +13,7 @@ final class UsageStore: ObservableObject {
     @Published var copilotData: UsageData?
     @Published var geminiData: UsageData?
     @Published var openRouterData: UsageData?
+    @Published var kimiData: UsageData?
     @Published var providerErrors: [String: String] = [:]
     @Published var isLoading = false
     @Published var lastUpdatedTime: Date?
@@ -28,6 +29,7 @@ final class UsageStore: ObservableObject {
     private var previousCopilotData: UsageData?
     private var previousGeminiData: UsageData?
     private var previousOpenRouterData: UsageData?
+    private var previousKimiData: UsageData?
     
     // MARK: - Initialization
     
@@ -117,6 +119,8 @@ final class UsageStore: ObservableObject {
             currentAndPrevious = (geminiData, previousGeminiData)
         case "OpenRouter":
             return nil
+        case "Kimi":
+            return nil
         default:
             currentAndPrevious = nil
         }
@@ -150,10 +154,14 @@ final class UsageStore: ObservableObject {
         case "OpenRouter":
             previousOpenRouterData = openRouterData
             openRouterData = nil
+        case "Kimi":
+            previousKimiData = kimiData
+            kimiData = nil
         default:
             break
         }
     }
+
 
     private func updateStore(with data: UsageData) {
         switch data.provider {
@@ -172,10 +180,14 @@ final class UsageStore: ObservableObject {
         case "OpenRouter":
             if openRouterData != nil { previousOpenRouterData = openRouterData }
             openRouterData = data
+        case "Kimi":
+            if kimiData != nil { previousKimiData = kimiData }
+            kimiData = data
         default:
             break
         }
     }
+
 
     private func checkThreshold(for data: UsageData) {
         let defaults = UserDefaults.standard
@@ -233,10 +245,20 @@ final class UsageStore: ObservableObject {
                 let threshold = threshold("openRouterThreshold", fallback: 5)
                 NotificationManager.shared.checkAndNotify(provider: "OpenRouter", usage: credits, threshold: threshold)
             }
+        case "Kimi":
+            if let session = data.sessionUsage {
+                let threshold = threshold("kimi5hThreshold", fallback: 80)
+                NotificationManager.shared.checkAndNotify(provider: "Kimi 5h", usage: normalize(session), threshold: threshold)
+            }
+            if let weekly = data.weeklyUsage {
+                let threshold = threshold("kimi7dThreshold", fallback: 80)
+                NotificationManager.shared.checkAndNotify(provider: "Kimi 7d", usage: normalize(weekly), threshold: threshold)
+            }
         default:
             break
         }
     }
+
 
     private func scheduleTimer() {
         timer?.invalidate()
@@ -293,10 +315,13 @@ final class UsageStore: ObservableObject {
             return boolValue("geminiEnabled", default: false)
         case "OpenRouter":
             return boolValue("openRouterEnabled", default: false)
+        case "Kimi":
+            return boolValue("kimiEnabled", default: false)
         default:
             return true
         }
     }
+
 
     private func invalidateAllProviderCaches() async {
         for provider in providers {

@@ -60,7 +60,7 @@ final class StatusItemController: ObservableObject {
             switch key {
             case "claudeEnabled", "codexEnabled":
                 return true
-            case "openRouterEnabled", "copilotEnabled", "geminiEnabled":
+            case "openRouterEnabled", "copilotEnabled", "geminiEnabled", "kimiEnabled":
                 return false
             default:
                 return true
@@ -109,6 +109,13 @@ final class StatusItemController: ObservableObject {
             .store(in: &cancellables)
 
         usageStore.$geminiData
+            .sink { [weak self] _ in
+                self?.updateIcon()
+                self?.updateMenu()
+            }
+            .store(in: &cancellables)
+
+        usageStore.$kimiData
             .sink { [weak self] _ in
                 self?.updateIcon()
                 self?.updateMenu()
@@ -166,6 +173,7 @@ final class StatusItemController: ObservableObject {
             copilotData: usageStore.copilotData,
             geminiData: usageStore.geminiData,
             openRouterData: usageStore.openRouterData,
+            kimiData: usageStore.kimiData,
             sessionTrends: sessionTrends,
             isLoading: usageStore.isLoading,
             providerErrors: usageStore.providerErrors,
@@ -221,21 +229,28 @@ final class StatusItemController: ObservableObject {
             if let openRouterTime = usageStore.openRouterData?.lastUpdated {
                 return now.timeIntervalSince(openRouterTime) > 600
             }
+            if let kimiTime = usageStore.kimiData?.lastUpdated {
+                return now.timeIntervalSince(kimiTime) > 600
+            }
             return false
         }()
         
         // Use Claude data as primary, fallback to others
-        let sessionUsage = usageStore.claudeData?.sessionUsage
-            ?? usageStore.codexData?.sessionUsage
-            ?? usageStore.copilotData?.sessionUsage
-            ?? usageStore.geminiData?.sessionUsage
-            ?? usageStore.openRouterData?.sessionUsage
+        let claudeSession = usageStore.claudeData?.sessionUsage
+        let codexSession = usageStore.codexData?.sessionUsage
+        let copilotSession = usageStore.copilotData?.sessionUsage
+        let geminiSession = usageStore.geminiData?.sessionUsage
+        let openRouterSession = usageStore.openRouterData?.sessionUsage
+        let kimiSession = usageStore.kimiData?.sessionUsage
+        let sessionUsage = claudeSession ?? codexSession ?? copilotSession ?? geminiSession ?? openRouterSession ?? kimiSession
         
-        let weeklyUsage = usageStore.claudeData?.weeklyUsage
-            ?? usageStore.codexData?.weeklyUsage
-            ?? usageStore.copilotData?.weeklyUsage
-            ?? usageStore.geminiData?.weeklyUsage
-            ?? usageStore.openRouterData?.weeklyUsage
+        let claudeWeekly = usageStore.claudeData?.weeklyUsage
+        let codexWeekly = usageStore.codexData?.weeklyUsage
+        let copilotWeekly = usageStore.copilotData?.weeklyUsage
+        let geminiWeekly = usageStore.geminiData?.weeklyUsage
+        let openRouterWeekly = usageStore.openRouterData?.weeklyUsage
+        let kimiWeekly = usageStore.kimiData?.weeklyUsage
+        let weeklyUsage = claudeWeekly ?? codexWeekly ?? copilotWeekly ?? geminiWeekly ?? openRouterWeekly ?? kimiWeekly
 
         if isDetailedStatusBarEnabled {
             var barProviders: [ProviderSegmentData] = []
@@ -244,6 +259,15 @@ final class StatusItemController: ObservableObject {
                 barProviders.append(ProviderSegmentData(
                     icon: StatusBarIcon.claude, brandColor: BrandColor.claude,
                     session: usageStore.claudeData?.sessionUsage, weekly: usageStore.claudeData?.weeklyUsage))
+            }
+            if isProviderEnabled("kimiEnabled") {
+                let kimiSession = usageStore.kimiData?.sessionUsage
+                let kimiWeekly = usageStore.kimiData?.weeklyUsage
+                if kimiSession != nil || kimiWeekly != nil {
+                    barProviders.append(ProviderSegmentData(
+                        icon: StatusBarIcon.kimi, brandColor: BrandColor.kimi,
+                        session: kimiSession, weekly: kimiWeekly))
+                }
             }
             if isProviderEnabled("codexEnabled") {
                 barProviders.append(ProviderSegmentData(
@@ -267,7 +291,21 @@ final class StatusItemController: ObservableObject {
                     credits: usageStore.openRouterData?.remainingCredits)
                 : nil
 
-            if barProviders.isEmpty && orData == nil {
+            let kimiSegData: OpenRouterSegmentData? = {
+                guard isProviderEnabled("kimiEnabled") else { return nil }
+                let kimiSession = usageStore.kimiData?.sessionUsage
+                let kimiWeekly = usageStore.kimiData?.weeklyUsage
+                if kimiSession != nil || kimiWeekly != nil {
+                    return nil
+                }
+                return OpenRouterSegmentData(
+                    icon: StatusBarIcon.kimi,
+                    brandColor: BrandColor.kimi,
+                    credits: usageStore.kimiData?.remainingCredits
+                )
+            }()
+
+            if barProviders.isEmpty && orData == nil && kimiSegData == nil {
                 statusItem?.button?.image = NSImage(systemSymbolName: "gauge.medium", accessibilityDescription: "Usage Monitor")
                 statusItem?.button?.image?.isTemplate = true
                 statusItem?.length = NSStatusItem.squareLength
@@ -275,7 +313,7 @@ final class StatusItemController: ObservableObject {
             }
 
             let detailedIcon = IconRenderer.renderDetailedProvidersIcon(
-                barProviders: barProviders, openRouter: orData, isStale: isStale)
+                barProviders: barProviders, openRouter: orData, kimi: kimiSegData, isStale: isStale)
             statusItem?.button?.image = detailedIcon
             statusItem?.length = detailedIcon.size.width + 4
             return

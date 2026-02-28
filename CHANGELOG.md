@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Kimi (Moonshot AI) provider support** — Kimi Code OAuth 기반 5h/7d 사용량 표시, 알림, Settings UI 지원
+  - Usage API: `api.kimi.com/coding/v1/usages`
+  - 인증: `~/.kimi/credentials/kimi-code.json` OAuth 세션 자동 갱신
+  - BrandColor: Kimi status bar 아이콘 톤의 파란색
+
 ## [1.0.2] - 2026-02-13
 
 ### Changed

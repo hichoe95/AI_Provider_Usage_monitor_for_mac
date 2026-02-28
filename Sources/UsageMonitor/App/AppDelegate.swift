@@ -19,7 +19,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             CodexProvider(),
             CopilotProvider(),
             GeminiProvider(),
-            OpenRouterProvider()
+            OpenRouterProvider(),
+            KimiProvider()
         ]
 
         let store = UsageStore(providers: providers, refreshInterval: resolvedInterval)

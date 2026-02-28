@@ -7,6 +7,7 @@ final class SettingsStore: ObservableObject {
     @AppStorage("copilotEnabled") var copilotEnabled = false
     @AppStorage("geminiEnabled") var geminiEnabled = false
     @AppStorage("openRouterEnabled") var openRouterEnabled = false
+    @AppStorage("kimiEnabled") var kimiEnabled = false
     @AppStorage("refreshInterval") var refreshInterval: Int = 300 // seconds
     @AppStorage("statusBarDetailedView") var statusBarDetailedView = true
     
@@ -21,6 +22,8 @@ final class SettingsStore: ObservableObject {
     @AppStorage("gemini7dThreshold") var gemini7dThreshold: Double = 80
     @AppStorage("copilotMonthlyRequestLimit") var copilotMonthlyRequestLimit: Double = 300
     @AppStorage("openRouterThreshold") var openRouterThreshold: Double = 5.0
+    @AppStorage("kimi5hThreshold") var kimi5hThreshold: Double = 80
+    @AppStorage("kimi7dThreshold") var kimi7dThreshold: Double = 80
     
     var refreshIntervalDescription: String {
         switch refreshInterval {

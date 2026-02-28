@@ -9,7 +9,18 @@
 
   <p><strong>WORK UNTIL USAGE IS EXHAUSTED.</strong></p>
 
-  <p>Monitor Claude, Codex, Copilot, Gemini & OpenRouter usage<br/>right from your macOS menu bar.</p>
+  <p>Monitor Claude, Kimi, Codex, Copilot, Gemini, and OpenRouter usage<br/>right from your macOS menu bar.</p>
+
+  <p>
+    <img src="Sources/UsageMonitor/Resources/claude_logo.png" alt="Claude" width="24" />
+    <img src="Sources/UsageMonitor/Resources/kimi_logo.png" alt="Kimi" width="24" />
+    <img src="Sources/UsageMonitor/Resources/codex_logo.png" alt="Codex" width="24" />
+    <img src="Sources/UsageMonitor/Resources/copilot_logo.png" alt="Copilot" width="24" />
+    <img src="Sources/UsageMonitor/Resources/gemini_logo.png" alt="Gemini" width="24" />
+    <img src="Sources/UsageMonitor/Resources/openrouter_logo.png" alt="OpenRouter" width="24" />
+  </p>
+
+  <p><strong>Supported providers:</strong> Claude Code · Kimi · Codex · Copilot · Gemini · OpenRouter</p>
 
   <p>
     English&nbsp;&nbsp;|&nbsp;&nbsp;<a href="README.md">한국어</a>
@@ -46,6 +57,7 @@ Get notified before hitting limits so your workflow never gets interrupted.
 | **Trend indicators** | Usage trend arrows (`↑` / `↓`) |
 | **Usage alerts** | macOS notifications at configurable thresholds |
 | **OpenRouter balance** | Remaining credits in dollars |
+| **Kimi usage** | 5h/7d gauges from Kimi Code OAuth session |
 | **Dashboard shortcuts** | One-click jump to each provider's dashboard |
 
 **Supported Providers:**
@@ -53,6 +65,7 @@ Get notified before hitting limits so your workflow never gets interrupted.
 | Provider | Auth Method | Displayed Info |
 |---|---|---|
 | Claude Code | OAuth (Keychain) | 5h, 7d, Sonnet usage |
+| Kimi (Moonshot) | Kimi Code OAuth (`~/.kimi`) | 5h, 7d usage |
 | Codex (OpenAI) | OAuth (`~/.codex/auth.json`) | 5h, 7d, Spark usage |
 | Copilot | GitHub CLI (`gh`) | Usage |
 | Gemini | Google OAuth / API Key | Usage |
@@ -102,9 +115,24 @@ claude login        # Claude Code
 codex login         # Codex (OpenAI)
 gh auth login       # Copilot (GitHub)
 gemini auth         # Gemini
+# Kimi: kimi login (Kimi Code OAuth)
 ```
 
 > CLI commands may vary by version. Check `--help` for details.
+
+### Provider Quick Setup (Icon Guide)
+
+> <img src="Sources/UsageMonitor/Resources/claude_logo.png" alt="Claude" width="16" /> **Claude Code** — run `claude login`, then enable Claude in `Settings`
+
+> <img src="Sources/UsageMonitor/Resources/kimi_logo.png" alt="Kimi" width="16" /> **Kimi** — run `kimi login`, then use OAuth session from `~/.kimi/credentials/kimi-code.json`
+
+> <img src="Sources/UsageMonitor/Resources/codex_logo.png" alt="Codex" width="16" /> **Codex** — run `codex login`, app reads `~/.codex/auth.json`
+
+> <img src="Sources/UsageMonitor/Resources/copilot_logo.png" alt="Copilot" width="16" /> **Copilot** — use `gh auth login` or `GH_TOKEN`/`GITHUB_TOKEN`
+
+> <img src="Sources/UsageMonitor/Resources/gemini_logo.png" alt="Gemini" width="16" /> **Gemini** — use `gemini auth` or `GEMINI_API_KEY`
+
+> <img src="Sources/UsageMonitor/Resources/openrouter_logo.png" alt="OpenRouter" width="16" /> **OpenRouter** — save API key in Settings
 
 ### 2. Enable Providers
 
@@ -130,6 +158,7 @@ Each provider has a different login session duration.
 | Codex (OpenAI) | ~10 days | Auto-refresh |
 | Copilot | GitHub session | `gh auth login` |
 | Gemini | Google session | `gemini auth` |
+| Kimi (Moonshot) | Kimi OAuth session | `kimi login` (token stored in `~/.kimi`) |
 
 ### Claude Code: Automatic Token Refresh
 

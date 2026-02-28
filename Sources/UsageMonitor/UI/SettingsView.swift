@@ -23,6 +23,7 @@ struct SettingsView: View {
                         Toggle("Copilot (GitHub)", isOn: $settings.copilotEnabled)
                         Toggle("Gemini", isOn: $settings.geminiEnabled)
                         Toggle("OpenRouter", isOn: $settings.openRouterEnabled)
+                        Toggle("Kimi", isOn: $settings.kimiEnabled)
                     }
                     .padding(.top, 4)
                 }
@@ -115,6 +116,14 @@ struct SettingsView: View {
                             thresholdRow("OpenRouter", value: $settings.openRouterThreshold,
                                          range: 0...50, step: 1,
                                          display: "< $\(String(format: "%.0f", settings.openRouterThreshold))")
+                            Divider()
+                            Text("Kimi").font(.callout).fontWeight(.semibold)
+                            thresholdRow("5h limit", value: $settings.kimi5hThreshold,
+                                         range: 0...100, step: 5,
+                                         display: "\(Int(settings.kimi5hThreshold))%")
+                            thresholdRow("7d limit", value: $settings.kimi7dThreshold,
+                                         range: 0...100, step: 5,
+                                         display: "\(Int(settings.kimi7dThreshold))%")
                         }
                     }
                     .padding(.top, 4)
@@ -162,6 +171,9 @@ struct SettingsView: View {
                             Text("Failed to save").font(.caption).foregroundStyle(.red)
                         }
                         Divider().padding(.top, 4)
+                        Text("Kimi uses local OAuth session from ~/.kimi/credentials/kimi-code.json")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
                         Text("Copilot auth: GH_TOKEN/GITHUB_TOKEN or ~/.copilot login session")
                             .font(.caption)
                             .foregroundStyle(.tertiary)
