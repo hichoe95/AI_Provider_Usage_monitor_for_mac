@@ -102,6 +102,7 @@ enum MenuBuilder {
     static func buildMenu(
         claudeData: UsageData?,
         codexData: UsageData?,
+        codexAccounts: [(name: String, data: UsageData?)] = [],
         copilotData: UsageData?,
         geminiData: UsageData?,
         openRouterData: UsageData?,
@@ -157,11 +158,21 @@ enum MenuBuilder {
          }
 
           if codexEnabled {
-              if hasProviderSection { menu.addItem(NSMenuItem.separator()) }
-              addGaugeItem(to: menu, name: "Codex", logo: ProviderLogo.codex, color: BrandColor.codex,
-                           data: codexData, sessionTrend: sessionTrends["Codex"], error: providerErrors["Codex"])
-              addDashboardItem(to: menu, urlString: "https://chatgpt.com/codex/settings/usage")
-              hasProviderSection = true
+              let accounts: [(name: String, data: UsageData?)]
+              if codexAccounts.isEmpty {
+                  accounts = [("Codex", codexData)]
+              } else {
+                  accounts = codexAccounts
+              }
+
+              for account in accounts {
+                  if hasProviderSection { menu.addItem(NSMenuItem.separator()) }
+                  addGaugeItem(to: menu, name: account.name, logo: ProviderLogo.codex, color: BrandColor.codex,
+                               data: account.data, sessionTrend: sessionTrends[account.name],
+                               error: providerErrors[account.name])
+                  addDashboardItem(to: menu, urlString: "https://chatgpt.com/codex/settings/usage")
+                  hasProviderSection = true
+              }
           }
 
           if copilotEnabled {

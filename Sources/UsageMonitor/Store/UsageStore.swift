@@ -10,6 +10,10 @@ final class UsageStore: ObservableObject {
     
     @Published var claudeData: UsageData?
     @Published var codexData: UsageData?
+    /// 다중 Codex 계정 지원: provider 표시명 → 사용량
+    /// 단일 계정일 때는 codexData와 동일 데이터가 "Codex" 키로 들어갑니다.
+    @Published var codexAccounts: [String: UsageData] = [:]
+    @Published var codexAccountNames: [String] = []
     @Published var copilotData: UsageData?
     @Published var geminiData: UsageData?
     @Published var openRouterData: UsageData?
@@ -39,6 +43,9 @@ final class UsageStore: ObservableObject {
     ) {
         self.providers = providers
         self.refreshInterval = refreshInterval
+        self.codexAccountNames = providers
+            .map { $0.name }
+            .filter { $0 == "Codex" || $0.hasPrefix("Codex ") || $0.hasPrefix("Codex(") }
 
         NotificationCenter.default.publisher(for: .credentialsDidChange)
             .sink { [weak self] _ in
@@ -108,11 +115,23 @@ final class UsageStore: ObservableObject {
         }
 
         let currentAndPrevious: (current: UsageData?, previous: UsageData?)?
+        if isCodexProviderName(providerName) {
+            if providerName == "Codex" {
+                currentAndPrevious = (codexData, previousCodexData)
+            } else {
+                currentAndPrevious = (codexAccounts[providerName], nil)
+            }
+            guard
+                let current = currentAndPrevious?.current?.sessionUsage,
+                let previous = currentAndPrevious?.previous?.sessionUsage
+            else {
+                return nil
+            }
+            return normalizedPercent(current) - normalizedPercent(previous)
+        }
         switch providerName {
         case "Claude Code", "Claude":
             currentAndPrevious = (claudeData, previousClaudeData)
-        case "Codex":
-            currentAndPrevious = (codexData, previousCodexData)
         case "Copilot":
             currentAndPrevious = (copilotData, previousCopilotData)
         case "Gemini":
@@ -138,13 +157,18 @@ final class UsageStore: ObservableObject {
     // MARK: - Private Methods
     
     private func clearStaleData(for providerName: String) {
+        if isCodexProviderName(providerName) {
+            if providerName == "Codex" {
+                previousCodexData = codexData
+                codexData = nil
+            }
+            codexAccounts.removeValue(forKey: providerName)
+            return
+        }
         switch providerName {
         case "Claude Code":
             previousClaudeData = claudeData
             claudeData = nil
-        case "Codex":
-            previousCodexData = codexData
-            codexData = nil
         case "Copilot":
             previousCopilotData = copilotData
             copilotData = nil
@@ -164,13 +188,18 @@ final class UsageStore: ObservableObject {
 
 
     private func updateStore(with data: UsageData) {
+        if isCodexProviderName(data.provider) {
+            if data.provider == "Codex" {
+                if codexData != nil { previousCodexData = codexData }
+                codexData = data
+            }
+            codexAccounts[data.provider] = data
+            return
+        }
         switch data.provider {
         case "Claude Code":
             if claudeData != nil { previousClaudeData = claudeData }
             claudeData = data
-        case "Codex":
-            if codexData != nil { previousCodexData = codexData }
-            codexData = data
         case "Copilot":
             if copilotData != nil { previousCopilotData = copilotData }
             copilotData = data
@@ -213,14 +242,14 @@ final class UsageStore: ObservableObject {
                 let threshold = threshold("claude7dThreshold", fallback: 80)
                 NotificationManager.shared.checkAndNotify(provider: "Claude 7d", usage: normalize(weekly), threshold: threshold)
             }
-        case "Codex":
+        case _ where isCodexProviderName(data.provider):
             if let session = data.sessionUsage {
                 let threshold = threshold("codex5hThreshold", fallback: 80)
-                NotificationManager.shared.checkAndNotify(provider: "Codex 5h", usage: normalize(session), threshold: threshold)
+                NotificationManager.shared.checkAndNotify(provider: "\(data.provider) 5h", usage: normalize(session), threshold: threshold)
             }
             if let weekly = data.weeklyUsage {
                 let threshold = threshold("codex7dThreshold", fallback: 80)
-                NotificationManager.shared.checkAndNotify(provider: "Codex 7d", usage: normalize(weekly), threshold: threshold)
+                NotificationManager.shared.checkAndNotify(provider: "\(data.provider) 7d", usage: normalize(weekly), threshold: threshold)
             }
         case "Copilot":
             if let session = data.sessionUsage {
@@ -304,11 +333,12 @@ final class UsageStore: ObservableObject {
             return UserDefaults.standard.bool(forKey: key)
         }
 
+        if isCodexProviderName(providerName) {
+            return boolValue("codexEnabled", default: true)
+        }
         switch providerName {
         case "Claude Code":
             return boolValue("claudeEnabled", default: true)
-        case "Codex":
-            return boolValue("codexEnabled", default: true)
         case "Copilot":
             return boolValue("copilotEnabled", default: false)
         case "Gemini":
@@ -322,6 +352,10 @@ final class UsageStore: ObservableObject {
         }
     }
 
+
+    private func isCodexProviderName(_ providerName: String) -> Bool {
+        providerName == "Codex" || providerName.hasPrefix("Codex ") || providerName.hasPrefix("Codex(")
+    }
 
     private func invalidateAllProviderCaches() async {
         for provider in providers {
