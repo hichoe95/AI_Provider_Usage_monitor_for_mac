@@ -4,19 +4,22 @@ import Foundation
 /// ~/.codex/auth.json 파일에서 OAuth 토큰을 읽고, 토큰 신선도를 확인한 후
 /// ChatGPT 백엔드 API를 호출하여 사용량 데이터를 파싱합니다.
 public struct CodexProvider: Provider {
-    public let name = "Codex"
-    
+    public let name: String
+
     public var isAvailable: Bool {
         FileManager.default.fileExists(atPath: authFilePath)
     }
-    
+
     private let authFilePath: String
     private let apiEndpoint = "https://chatgpt.com/backend-api/wham/usage"
     private let userAgent = "UsageMonitor/1.0"
-    
+
     /// CodexProvider를 초기화합니다.
-    /// - Parameter authFilePath: OAuth 토큰 파일 경로 (기본값: ~/.codex/auth.json)
-    public init(authFilePath: String = "~/.codex/auth.json") {
+    /// - Parameters:
+    ///   - name: UsageData.provider에 들어갈 표시명. 다중 계정 지원 시 "Codex (A)" 같은 식별자 사용.
+    ///   - authFilePath: OAuth 토큰 파일 경로 (기본값: ~/.codex/auth.json)
+    public init(name: String = "Codex", authFilePath: String = "~/.codex/auth.json") {
+        self.name = name
         self.authFilePath = (authFilePath as NSString).expandingTildeInPath
     }
     

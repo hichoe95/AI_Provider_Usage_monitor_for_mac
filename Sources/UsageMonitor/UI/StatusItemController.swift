@@ -92,6 +92,13 @@ final class StatusItemController: ObservableObject {
                 self?.updateMenu()
             }
             .store(in: &cancellables)
+
+        usageStore.$codexAccounts
+            .sink { [weak self] _ in
+                self?.updateIcon()
+                self?.updateMenu()
+            }
+            .store(in: &cancellables)
         
         // Subscribe to OpenRouter data changes
         usageStore.$openRouterData
@@ -157,9 +164,6 @@ final class StatusItemController: ObservableObject {
         if let trend = usageStore.sessionTrend(for: "Claude Code") {
             sessionTrends["Claude"] = trend
         }
-        if let trend = usageStore.sessionTrend(for: "Codex") {
-            sessionTrends["Codex"] = trend
-        }
         if let trend = usageStore.sessionTrend(for: "Copilot") {
             sessionTrends["Copilot"] = trend
         }
@@ -167,9 +171,22 @@ final class StatusItemController: ObservableObject {
             sessionTrends["Gemini"] = trend
         }
 
+        let codexAccountList: [(name: String, data: UsageData?)] = usageStore
+            .codexAccountNames
+            .map { name in
+                if let trend = usageStore.sessionTrend(for: name) {
+                    sessionTrends[name] = trend
+                }
+                let data = name == "Codex"
+                    ? (usageStore.codexAccounts[name] ?? usageStore.codexData)
+                    : usageStore.codexAccounts[name]
+                return (name, data)
+            }
+
         return MenuBuilder.buildMenu(
             claudeData: usageStore.claudeData,
             codexData: usageStore.codexData,
+            codexAccounts: codexAccountList,
             copilotData: usageStore.copilotData,
             geminiData: usageStore.geminiData,
             openRouterData: usageStore.openRouterData,
@@ -270,9 +287,15 @@ final class StatusItemController: ObservableObject {
                 }
             }
             if isProviderEnabled("codexEnabled") {
+                // 상태바 폭 보호를 위해 Codex 계정이 여러 개여도 첫 번째 것만 그래픽으로 표시.
+                // 나머지 계정은 드롭다운 메뉴에서 확인.
+                let primaryCodexName = usageStore.codexAccountNames.first ?? "Codex"
+                let primaryCodexData: UsageData? = primaryCodexName == "Codex"
+                    ? (usageStore.codexAccounts[primaryCodexName] ?? usageStore.codexData)
+                    : usageStore.codexAccounts[primaryCodexName]
                 barProviders.append(ProviderSegmentData(
                     icon: StatusBarIcon.codex, brandColor: BrandColor.codex,
-                    session: usageStore.codexData?.sessionUsage, weekly: usageStore.codexData?.weeklyUsage))
+                    session: primaryCodexData?.sessionUsage, weekly: primaryCodexData?.weeklyUsage))
             }
             if isProviderEnabled("copilotEnabled") {
                 barProviders.append(ProviderSegmentData(
