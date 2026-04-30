@@ -3,7 +3,18 @@ import LocalAuthentication
 import Security
 
 public actor ClaudeProvider: Provider {
-    public nonisolated let name = "Claude Code"
+    /// OAuth 자격증명을 어디서 읽을지 지정합니다.
+    /// - `default`: 환경변수 + `~/.claude/.credentials.json` + `~/.claude/auth.json` + Keychain
+    ///   (기본 Claude Code 계정 — 단일 사용자 케이스 그대로)
+    /// - `file(URL)`: 지정된 파일 한 곳에서만 토큰을 읽고 갱신 시 같은 파일에 다시 씁니다.
+    ///   (`~/.claude/auth.<label>.json` 패턴으로 멀티 계정 지원)
+    public enum CredentialSource: Sendable {
+        case `default`
+        case file(URL)
+    }
+
+    public nonisolated let name: String
+    private let credentialSource: CredentialSource
     private let primaryKeychainAccount = "claudeAiOauth"
     private var cachedOAuth: ClaudeOAuthResult?
     private var didAttemptInteractiveKeychainLookup = false
@@ -12,21 +23,29 @@ public actor ClaudeProvider: Provider {
     private let oauthClientID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
     private let oauthScopes = "user:profile user:inference user:sessions:claude_code"
 
-    public init() {}
-    
-    public nonisolated var isAvailable: Bool {
-        if environmentOAuthToken() != nil {
-            return true
-        }
+    public init(name: String = "Claude Code", credentialSource: CredentialSource = .default) {
+        self.name = name
+        self.credentialSource = credentialSource
+    }
 
-        let home = FileManager.default.homeDirectoryForCurrentUser
-        for filename in [".claude/.credentials.json", ".claude/auth.json"] {
-            let path = home.appendingPathComponent(filename)
-            if FileManager.default.fileExists(atPath: path.path) {
+    public nonisolated var isAvailable: Bool {
+        switch credentialSource {
+        case .default:
+            if environmentOAuthToken() != nil {
                 return true
             }
+
+            let home = FileManager.default.homeDirectoryForCurrentUser
+            for filename in [".claude/.credentials.json", ".claude/auth.json"] {
+                let path = home.appendingPathComponent(filename)
+                if FileManager.default.fileExists(atPath: path.path) {
+                    return true
+                }
+            }
+            return hasKeychainCredential()
+        case .file(let url):
+            return FileManager.default.fileExists(atPath: url.path)
         }
-        return hasKeychainCredential()
     }
 
     nonisolated private func hasKeychainCredential() -> Bool {
@@ -41,7 +60,7 @@ public actor ClaudeProvider: Provider {
         let status = SecItemCopyMatching(query as CFDictionary, nil)
         return status == errSecSuccess || status == errSecInteractionNotAllowed
     }
-    
+
     public func fetchUsage() async throws -> UsageData {
         let oauth = try getCachedOrFreshOAuth()
         return try await fetchUsage(using: oauth, allowRetry: true)
@@ -146,6 +165,9 @@ public actor ClaudeProvider: Provider {
         }
         var request = URLRequest(url: url)
         request.timeoutInterval = 20
+        // 멀티 계정 격리: URLCache는 URL 기준으로 응답을 보관하므로
+        // 같은 endpoint를 여러 토큰으로 호출하면 다른 계정의 응답을 받을 수 있다.
+        request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
@@ -168,10 +190,12 @@ public actor ClaudeProvider: Provider {
 
         let response = try JSONDecoder().decode(ClaudeUsageResponse.self, from: data)
         let isSonnetOnly = response.five_hour.utilization >= 80
-        let sessionResetDate = parseResetDate(response.five_hour.resets_at)
-        let weeklyResetDate = parseResetDate(response.seven_day.resets_at)
-        let sonnetResetDate = response.seven_day_sonnet.flatMap { parseResetDate($0.resets_at) }
-        
+        let sessionResetDate = response.five_hour.resets_at.flatMap { parseResetDate($0) }
+        let weeklyResetDate = response.seven_day.resets_at.flatMap { parseResetDate($0) }
+        let sonnetResetDate = response.seven_day_sonnet.flatMap { window in
+            window.resets_at.flatMap { parseResetDate($0) }
+        }
+
         return UsageData(
             provider: name,
             sessionUsage: response.five_hour.utilization,
@@ -210,6 +234,18 @@ public actor ClaudeProvider: Provider {
     }
 
     private func readOAuth(interactiveKeychain: Bool = true) -> ClaudeOAuthResult? {
+        switch credentialSource {
+        case .default:
+            return readDefaultOAuth(interactiveKeychain: interactiveKeychain)
+        case .file(let url):
+            guard let data = try? Data(contentsOf: url) else {
+                return nil
+            }
+            return ClaudeTokenExtractor.extract(from: data)
+        }
+    }
+
+    private func readDefaultOAuth(interactiveKeychain: Bool) -> ClaudeOAuthResult? {
         var candidates: [ClaudeOAuthResult] = []
         if let envToken = environmentOAuthToken() {
             candidates.append(ClaudeOAuthResult(accessToken: envToken, refreshToken: nil, expiresAt: nil))
@@ -317,7 +353,7 @@ public actor ClaudeProvider: Provider {
 
         return candidates.max { score($0) < score($1) }
     }
-    
+
     nonisolated private func extractFromKeychain(account: String, allowPrompt: Bool) -> ClaudeOAuthResult? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -395,11 +431,34 @@ public actor ClaudeProvider: Provider {
             expiresAt: response.expiresIn.map { Date().timeIntervalSince1970 * 1000 + Double($0) * 1000 }
         )
 
-        saveOAuthToKeychain(refreshed)
+        persistRefreshedOAuth(refreshed)
         return refreshed
     }
 
+    nonisolated private func persistRefreshedOAuth(_ oauth: ClaudeOAuthResult) {
+        switch credentialSource {
+        case .default:
+            saveOAuthToKeychain(oauth)
+        case .file(let url):
+            saveOAuthToFile(oauth, at: url)
+        }
+    }
+
     nonisolated private func saveOAuthToKeychain(_ oauth: ClaudeOAuthResult) {
+        guard let data = oauthPayloadData(oauth) else {
+            return
+        }
+        upsertOAuthKeychainData(data, account: primaryKeychainAccount)
+    }
+
+    nonisolated private func saveOAuthToFile(_ oauth: ClaudeOAuthResult, at url: URL) {
+        guard let data = oauthPayloadData(oauth, pretty: true) else {
+            return
+        }
+        try? data.write(to: url, options: .atomic)
+    }
+
+    nonisolated private func oauthPayloadData(_ oauth: ClaudeOAuthResult, pretty: Bool = false) -> Data? {
         var payload: [String: Any] = [
             "accessToken": oauth.accessToken
         ]
@@ -411,11 +470,8 @@ public actor ClaudeProvider: Provider {
         }
 
         let wrapper: [String: Any] = ["claudeAiOauth": payload]
-        guard let data = try? JSONSerialization.data(withJSONObject: wrapper) else {
-            return
-        }
-
-        upsertOAuthKeychainData(data, account: primaryKeychainAccount)
+        let options: JSONSerialization.WritingOptions = pretty ? [.prettyPrinted] : []
+        return try? JSONSerialization.data(withJSONObject: wrapper, options: options)
     }
 
     nonisolated private func upsertOAuthKeychainData(_ data: Data, account: String) {

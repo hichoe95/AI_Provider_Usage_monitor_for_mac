@@ -9,6 +9,10 @@ final class UsageStore: ObservableObject {
     // MARK: - Published Properties
     
     @Published var claudeData: UsageData?
+    /// 다중 Claude 계정 지원: provider 표시명 → 사용량
+    /// 기본 계정("Claude Code")은 claudeData와 동일 데이터가 "Claude Code" 키로 들어갑니다.
+    @Published var claudeAccounts: [String: UsageData] = [:]
+    @Published var claudeAccountNames: [String] = []
     @Published var codexData: UsageData?
     /// 다중 Codex 계정 지원: provider 표시명 → 사용량
     /// 단일 계정일 때는 codexData와 동일 데이터가 "Codex" 키로 들어갑니다.
@@ -46,6 +50,9 @@ final class UsageStore: ObservableObject {
         self.codexAccountNames = providers
             .map { $0.name }
             .filter { $0 == "Codex" || $0.hasPrefix("Codex ") || $0.hasPrefix("Codex(") }
+        self.claudeAccountNames = providers
+            .map { $0.name }
+            .filter { $0 == "Claude Code" || $0.hasPrefix("Claude (") }
 
         NotificationCenter.default.publisher(for: .credentialsDidChange)
             .sink { [weak self] _ in
@@ -129,6 +136,20 @@ final class UsageStore: ObservableObject {
             }
             return normalizedPercent(current) - normalizedPercent(previous)
         }
+        if isClaudeProviderName(providerName) {
+            if providerName == "Claude Code" || providerName == "Claude" {
+                currentAndPrevious = (claudeData, previousClaudeData)
+            } else {
+                currentAndPrevious = (claudeAccounts[providerName], nil)
+            }
+            guard
+                let current = currentAndPrevious?.current?.sessionUsage,
+                let previous = currentAndPrevious?.previous?.sessionUsage
+            else {
+                return nil
+            }
+            return normalizedPercent(current) - normalizedPercent(previous)
+        }
         switch providerName {
         case "Claude Code", "Claude":
             currentAndPrevious = (claudeData, previousClaudeData)
@@ -165,6 +186,14 @@ final class UsageStore: ObservableObject {
             codexAccounts.removeValue(forKey: providerName)
             return
         }
+        if isClaudeProviderName(providerName) {
+            if providerName == "Claude Code" {
+                previousClaudeData = claudeData
+                claudeData = nil
+            }
+            claudeAccounts.removeValue(forKey: providerName)
+            return
+        }
         switch providerName {
         case "Claude Code":
             previousClaudeData = claudeData
@@ -194,6 +223,14 @@ final class UsageStore: ObservableObject {
                 codexData = data
             }
             codexAccounts[data.provider] = data
+            return
+        }
+        if isClaudeProviderName(data.provider) {
+            if data.provider == "Claude Code" {
+                if claudeData != nil { previousClaudeData = claudeData }
+                claudeData = data
+            }
+            claudeAccounts[data.provider] = data
             return
         }
         switch data.provider {
@@ -233,14 +270,14 @@ final class UsageStore: ObservableObject {
         }
 
         switch data.provider {
-        case "Claude Code":
+        case _ where isClaudeProviderName(data.provider):
             if let session = data.sessionUsage {
                 let threshold = threshold("claude5hThreshold", fallback: 80)
-                NotificationManager.shared.checkAndNotify(provider: "Claude 5h", usage: normalize(session), threshold: threshold)
+                NotificationManager.shared.checkAndNotify(provider: "\(data.provider) 5h", usage: normalize(session), threshold: threshold)
             }
             if let weekly = data.weeklyUsage {
                 let threshold = threshold("claude7dThreshold", fallback: 80)
-                NotificationManager.shared.checkAndNotify(provider: "Claude 7d", usage: normalize(weekly), threshold: threshold)
+                NotificationManager.shared.checkAndNotify(provider: "\(data.provider) 7d", usage: normalize(weekly), threshold: threshold)
             }
         case _ where isCodexProviderName(data.provider):
             if let session = data.sessionUsage {
@@ -336,6 +373,9 @@ final class UsageStore: ObservableObject {
         if isCodexProviderName(providerName) {
             return boolValue("codexEnabled", default: true)
         }
+        if isClaudeProviderName(providerName) {
+            return boolValue("claudeEnabled", default: true)
+        }
         switch providerName {
         case "Claude Code":
             return boolValue("claudeEnabled", default: true)
@@ -355,6 +395,10 @@ final class UsageStore: ObservableObject {
 
     private func isCodexProviderName(_ providerName: String) -> Bool {
         providerName == "Codex" || providerName.hasPrefix("Codex ") || providerName.hasPrefix("Codex(")
+    }
+
+    private func isClaudeProviderName(_ providerName: String) -> Bool {
+        providerName == "Claude Code" || providerName.hasPrefix("Claude (")
     }
 
     private func invalidateAllProviderCaches() async {

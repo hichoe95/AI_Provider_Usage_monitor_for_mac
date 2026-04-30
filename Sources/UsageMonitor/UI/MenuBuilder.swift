@@ -3,6 +3,13 @@ import UsageMonitorCore
 
 enum BrandColor {
     static let claude = NSColor(red: 0.87, green: 0.45, blue: 0.34, alpha: 1)       // #DE7356
+    /// Claude 멀티 계정 식별용 팔레트 (인덱스 0번은 기본 색상과 동일).
+    /// 첫 번째: 기본 Claude 코랄(#DE7356), 두 번째: 블루(#5E81F4), 세 번째: 퍼플(#A06EE0).
+    static let claudeAccounts: [NSColor] = [
+        NSColor(red: 0.87, green: 0.45, blue: 0.34, alpha: 1),
+        NSColor(red: 0.37, green: 0.51, blue: 0.96, alpha: 1),
+        NSColor(red: 0.63, green: 0.43, blue: 0.88, alpha: 1)
+    ]
     static let codex = NSColor(red: 0.0, green: 0.65, blue: 0.49, alpha: 1)         // #00A67E
     static let copilot = NSColor(red: 0.18, green: 0.63, blue: 0.97, alpha: 1)      // #2DA0F7
     static let gemini = NSColor(red: 0.30, green: 0.42, blue: 0.95, alpha: 1)       // #4D6BF3
@@ -101,6 +108,7 @@ enum MenuBuilder {
     @MainActor
     static func buildMenu(
         claudeData: UsageData?,
+        claudeAccounts: [(name: String, data: UsageData?)] = [],
         codexData: UsageData?,
         codexAccounts: [(name: String, data: UsageData?)] = [],
         copilotData: UsageData?,
@@ -144,10 +152,25 @@ enum MenuBuilder {
         }
 
          if claudeEnabled {
-               addGaugeItem(to: menu, name: "Claude", logo: ProviderLogo.claude, color: BrandColor.claude,
-                            data: claudeData, sessionTrend: sessionTrends["Claude"], error: providerErrors["Claude Code"])
-               addDashboardItem(to: menu, urlString: "https://claude.ai/settings/usage", keyEquivalent: "d")
-               hasProviderSection = true
+              let accounts: [(name: String, data: UsageData?)]
+              if claudeAccounts.isEmpty {
+                  accounts = [("Claude Code", claudeData)]
+              } else {
+                  accounts = Array(claudeAccounts.prefix(BrandColor.claudeAccounts.count))
+              }
+
+              for (index, account) in accounts.enumerated() {
+                  if hasProviderSection { menu.addItem(NSMenuItem.separator()) }
+                  let displayName = account.name == "Claude Code" ? "Claude" : account.name
+                  let trendKey = account.name == "Claude Code" ? "Claude" : account.name
+                  let color = BrandColor.claudeAccounts[index % BrandColor.claudeAccounts.count]
+                  addGaugeItem(to: menu, name: displayName, logo: ProviderLogo.claude, color: color,
+                               data: account.data, sessionTrend: sessionTrends[trendKey],
+                               error: providerErrors[account.name])
+                  let dashboardKey = index == 0 ? "d" : ""
+                  addDashboardItem(to: menu, urlString: "https://claude.ai/settings/usage", keyEquivalent: dashboardKey)
+                  hasProviderSection = true
+              }
            }
 
          if kimiEnabled {
@@ -567,7 +590,16 @@ private final class ProviderGaugeView: NSView {
 
     private func drawLogo(at point: NSPoint, size: CGFloat) {
         if let logo {
-            logo.draw(in: NSRect(x: point.x, y: point.y, width: size, height: size))
+            let rect = NSRect(x: point.x, y: point.y, width: size, height: size)
+            logo.draw(in: rect)
+            // Brand color로 sourceAtop 블렌드 → 같은 실루엣에 색만 바뀐다.
+            // 멀티 계정에서 Claude 로고가 계정별로 다른 색으로 보이게 한다.
+            if let context = NSGraphicsContext.current {
+                context.saveGraphicsState()
+                color.set()
+                rect.fill(using: .sourceAtop)
+                context.restoreGraphicsState()
+            }
         } else {
             let rect = NSRect(x: point.x, y: point.y, width: size, height: size)
             let path = NSBezierPath(roundedRect: rect, xRadius: 4, yRadius: 4)

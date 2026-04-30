@@ -5,6 +5,17 @@ struct ProviderSegmentData {
     let brandColor: NSColor
     let session: Double?
     let weekly: Double?
+    /// true면 아이콘을 brandColor로 sourceAtop 팅트해서 같은 실루엣에 다른 색을 입힌다.
+    /// Claude 멀티 계정처럼 같은 로고를 색만 바꿔 구분할 때 사용한다.
+    let tintIcon: Bool
+
+    init(icon: NSImage?, brandColor: NSColor, session: Double?, weekly: Double?, tintIcon: Bool = false) {
+        self.icon = icon
+        self.brandColor = brandColor
+        self.session = session
+        self.weekly = weekly
+        self.tintIcon = tintIcon
+    }
 }
 
 struct OpenRouterSegmentData {
@@ -172,6 +183,13 @@ enum IconRenderer {
         )
         if let icon = provider.icon {
             icon.draw(in: iconRect)
+            if provider.tintIcon {
+                context.saveGState()
+                context.setBlendMode(.sourceAtop)
+                context.setFillColor(provider.brandColor.cgColor)
+                context.fill(iconRect)
+                context.restoreGState()
+            }
         } else {
             let fallbackRect = iconRect
             context.setFillColor(provider.brandColor.withAlphaComponent(0.3).cgColor)

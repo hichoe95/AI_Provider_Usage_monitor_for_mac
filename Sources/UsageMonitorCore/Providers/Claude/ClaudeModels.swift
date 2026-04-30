@@ -8,7 +8,8 @@ struct ClaudeUsageResponse: Codable, Sendable {
 
 struct UsageWindow: Codable, Sendable {
     let utilization: Double
-    let resets_at: String
+    /// API는 사용량이 0인 윈도우(특히 sonnet)에서 null을 반환한다.
+    let resets_at: String?
 }
 
 struct ClaudeCredentials: Codable, Sendable {
