@@ -28,6 +28,14 @@
 		<data>
 		BOnnPfo2TYrHeTMam3HhkSVyHSc=
 		</data>
+		<key>Resources/UsageMonitor_UsageMonitor.bundle/kimi_dropdown_logo.png</key>
+		<data>
+		mhoXQk9b/oEF//nDowpT2GlgWKY=
+		</data>
+		<key>Resources/UsageMonitor_UsageMonitor.bundle/kimi_logo.png</key>
+		<data>
+		buZteUa/9h/G+8ZcSdVjw3u6x30=
+		</data>
 		<key>Resources/UsageMonitor_UsageMonitor.bundle/openrouter_logo.png</key>
 		<data>
 		XfxSZn7p5JLj0o9iLa1yWHT+NuM=
@@ -75,6 +83,20 @@
 			<key>hash2</key>
 			<data>
 			EMYo9V0iqXJbn5/MznzwYrn7aNpfdzbocBDgWU17pts=
+			</data>
+		</dict>
+		<key>Resources/UsageMonitor_UsageMonitor.bundle/kimi_dropdown_logo.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			rmjF9HnGuSvHn1YXLyu3icUORsad73pEMglVUIas3cM=
+			</data>
+		</dict>
+		<key>Resources/UsageMonitor_UsageMonitor.bundle/kimi_logo.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			+0YBeMGc0o/JU/tEbrIAtAUPQEbq49hNGhUYnrUPcXw=
 			</data>
 		</dict>
 		<key>Resources/UsageMonitor_UsageMonitor.bundle/openrouter_logo.png</key>

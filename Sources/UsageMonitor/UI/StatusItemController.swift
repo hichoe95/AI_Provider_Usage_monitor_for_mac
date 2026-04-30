@@ -84,7 +84,14 @@ final class StatusItemController: ObservableObject {
                 self?.updateMenu()
             }
             .store(in: &cancellables)
-        
+
+        usageStore.$claudeAccounts
+            .sink { [weak self] _ in
+                self?.updateIcon()
+                self?.updateMenu()
+            }
+            .store(in: &cancellables)
+
         // Subscribe to Codex data changes
         usageStore.$codexData
             .sink { [weak self] _ in
@@ -171,6 +178,18 @@ final class StatusItemController: ObservableObject {
             sessionTrends["Gemini"] = trend
         }
 
+        let claudeAccountList: [(name: String, data: UsageData?)] = usageStore
+            .claudeAccountNames
+            .map { name in
+                if let trend = usageStore.sessionTrend(for: name) {
+                    sessionTrends[name] = trend
+                }
+                let data = name == "Claude Code"
+                    ? (usageStore.claudeAccounts[name] ?? usageStore.claudeData)
+                    : usageStore.claudeAccounts[name]
+                return (name, data)
+            }
+
         let codexAccountList: [(name: String, data: UsageData?)] = usageStore
             .codexAccountNames
             .map { name in
@@ -185,6 +204,7 @@ final class StatusItemController: ObservableObject {
 
         return MenuBuilder.buildMenu(
             claudeData: usageStore.claudeData,
+            claudeAccounts: claudeAccountList,
             codexData: usageStore.codexData,
             codexAccounts: codexAccountList,
             copilotData: usageStore.copilotData,
@@ -273,9 +293,21 @@ final class StatusItemController: ObservableObject {
             var barProviders: [ProviderSegmentData] = []
 
             if isProviderEnabled("claudeEnabled") {
-                barProviders.append(ProviderSegmentData(
-                    icon: StatusBarIcon.claude, brandColor: BrandColor.claude,
-                    session: usageStore.claudeData?.sessionUsage, weekly: usageStore.claudeData?.weeklyUsage))
+                let claudeNames = usageStore.claudeAccountNames.isEmpty
+                    ? ["Claude Code"]
+                    : Array(usageStore.claudeAccountNames.prefix(BrandColor.claudeAccounts.count))
+                let multipleAccounts = claudeNames.count > 1
+
+                for (index, name) in claudeNames.enumerated() {
+                    let data: UsageData? = name == "Claude Code"
+                        ? (usageStore.claudeAccounts[name] ?? usageStore.claudeData)
+                        : usageStore.claudeAccounts[name]
+                    let color = BrandColor.claudeAccounts[index % BrandColor.claudeAccounts.count]
+                    barProviders.append(ProviderSegmentData(
+                        icon: StatusBarIcon.claude, brandColor: color,
+                        session: data?.sessionUsage, weekly: data?.weeklyUsage,
+                        tintIcon: multipleAccounts))
+                }
             }
             if isProviderEnabled("kimiEnabled") {
                 let kimiSession = usageStore.kimiData?.sessionUsage

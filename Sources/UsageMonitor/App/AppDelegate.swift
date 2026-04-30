@@ -14,7 +14,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let refreshInterval = TimeInterval(UserDefaults.standard.integer(forKey: "refreshInterval"))
         let resolvedInterval = refreshInterval > 0 ? refreshInterval : 300
 
-        var providers: [any Provider] = [ClaudeProvider()]
+        var providers: [any Provider] = discoverClaudeProviders() as [any Provider]
         providers.append(contentsOf: discoverCodexProviders() as [any Provider])
         let tail: [any Provider] = [
             CopilotProvider(),
@@ -35,6 +35,43 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         usageStore?.stopPolling()
+    }
+
+    /// `~/.claude` 디렉터리에서 OAuth 파일을 탐색해 ClaudeProvider 인스턴스 목록을 만듭니다.
+    /// - 라벨 파일이 하나도 없으면: keychain/env/credentials.json 기반 단일 "Claude Code"만 등록
+    ///   (단일 계정 기존 사용자 호환)
+    /// - 라벨 파일이 하나라도 있으면: 라벨 파일만 등록하고 keychain default는 무시
+    ///   (사용자가 모든 활성 계정을 `auth.<label>.json`으로 박제했다고 가정 →
+    ///    어느 계정으로 keychain 로그인되든 동일한 N개의 계정이 표시됨)
+    /// 메뉴 폭/식별 가능한 색상 수를 고려해 최대 3개의 라벨 파일까지만 채택합니다.
+    private func discoverClaudeProviders() -> [ClaudeProvider] {
+        let maxAccounts = 3
+        let fm = FileManager.default
+        let claudeDir = ("~/.claude" as NSString).expandingTildeInPath
+
+        var labeled: [ClaudeProvider] = []
+
+        if let entries = try? fm.contentsOfDirectory(atPath: claudeDir) {
+            // 알파벳 역순 정렬: 라벨 이름으로 표시 순서를 직관적으로 제어할 수 있게 함.
+            let extraAuthFiles = entries
+                .filter { $0.hasPrefix("auth.") && $0.hasSuffix(".json") && $0 != "auth.json" }
+                .sorted(by: >)
+                .prefix(maxAccounts)
+
+            for file in extraAuthFiles {
+                let fullPath = "\(claudeDir)/\(file)"
+                let stripped = file
+                    .replacingOccurrences(of: "auth.", with: "", options: .anchored)
+                    .replacingOccurrences(of: ".json", with: "")
+                let label = stripped.isEmpty ? file : stripped
+                labeled.append(ClaudeProvider(
+                    name: "Claude (\(label))",
+                    credentialSource: .file(URL(fileURLWithPath: fullPath))
+                ))
+            }
+        }
+
+        return labeled.isEmpty ? [ClaudeProvider()] : labeled
     }
 
     /// `~/.codex` 디렉터리에서 OAuth 파일을 탐색해 CodexProvider 인스턴스 목록을 만듭니다.
